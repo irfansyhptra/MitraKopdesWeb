@@ -12,10 +12,22 @@ import type {
   ApiResponse,
   AuthResult,
   Cart,
+  Category,
+  DashboardSummary,
+  FinanceSummary,
+  MarketplaceFilter,
+  MarketplaceProduct,
   Order,
+  PageMeta,
   PaymentMethod,
   Product,
   ProductListResult,
+  Review,
+  ReviewableItem,
+  StaffTodayOrder,
+  StockItem,
+  StockSummary,
+  StoreStatus,
   User,
 } from './types';
 
@@ -126,8 +138,27 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
         }),
         'order',
       ),
-    getOrderHistory: async () =>
-      pick<Order[]>(await rawRequest('/orders/history'), 'orders'),
+    /**
+     * Riwayat pesanan berhalaman.
+     *
+     * `meta` wajib dibaca: tanpa itu klien tidak pernah tahu masih ada
+     * halaman berikutnya, dan tab "Selesai" berhenti di 10 pesanan pertama
+     * tanpa penjelasan.
+     */
+    getOrderHistory: async (page = 1, limit = 10) => {
+      const body = await rawRequest(
+        `/orders/history${toQuery({ page, limit })}`,
+      );
+      return {
+        items: (body?.orders ?? []) as Order[],
+        meta: (body?.meta ?? {
+          total: 0,
+          page,
+          limit,
+          totalPages: 1,
+        }) as PageMeta,
+      };
+    },
     getOrder: async (id: string) =>
       pick<Order>(await rawRequest(`/orders/${id}`), 'order'),
 
@@ -149,6 +180,142 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
         body: JSON.stringify(payload),
       }),
     me: () => request<User>('/auth/me'),
+
+    // ── Marketplace (publik) ──
+    // Filter dikirim ke server, bukan disaring di browser: menyaring satu
+    // halaman secara lokal memberi hasil salah begitu katalognya lebih
+    // panjang daripada satu halaman.
+    getMarketplaceProducts: async (
+      filter: MarketplaceFilter = {},
+      page = 1,
+      limit = 20,
+    ) => {
+      const body = await rawRequest(
+        `/marketplace/products${toQuery({
+          page,
+          limit,
+          sellerType: filter.sellerType ?? 'all',
+          sort: filter.sort ?? 'relevance',
+          ...(filter.search ? { search: filter.search } : {}),
+          ...(filter.categoryId ? { categoryId: filter.categoryId } : {}),
+          ...(filter.minPrice != null ? { minPrice: filter.minPrice } : {}),
+          ...(filter.maxPrice != null ? { maxPrice: filter.maxPrice } : {}),
+          ...(filter.inStock ? { inStock: 'true' } : {}),
+        })}`,
+      );
+      const data = body?.data ?? body ?? {};
+      return {
+        items: (data.products ?? []) as MarketplaceProduct[],
+        meta: {
+          total: data.total ?? 0,
+          page: data.page ?? page,
+          limit: data.limit ?? limit,
+          totalPages: data.totalPages ?? 1,
+        } as PageMeta,
+      };
+    },
+    getCategories: () => request<Category[]>('/categories'),
+
+    // ── Ulasan ──
+    getReviews: async (
+      ref: { productId?: string; umkmProductId?: string },
+      page = 1,
+      limit = 10,
+    ) => {
+      const body = await rawRequest(
+        `/reviews${toQuery({ ...ref, page, limit })}`,
+      );
+      return {
+        items: (body?.items ?? []) as Review[],
+        averageRating: (body?.averageRating ?? null) as number | null,
+        meta: (body?.meta ?? {
+          total: 0,
+          page,
+          limit,
+          totalPages: 1,
+        }) as PageMeta,
+      };
+    },
+    getReviewableItems: async (orderId: string) => {
+      const body = await rawRequest(`/reviews/reviewable/${orderId}`);
+      return (body?.items ?? []) as ReviewableItem[];
+    },
+    submitReview: (payload: {
+      orderId: string;
+      productId?: string | null;
+      umkmProductId?: string | null;
+      rating: number;
+      comment?: string;
+    }) =>
+      request<Review>('/reviews', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    // ── Dashboard staf Kopdes ──
+    // Satu endpoint per bagian: kalau rekap keuangan gagal, kartu pesanan
+    // dan stok tetap tampil.
+    getStaffSummary: () =>
+      request<DashboardSummary>('/admin/dashboard/summary'),
+    getStaffTodayOrders: (limit = 3) =>
+      request<StaffTodayOrder[]>(
+        `/admin/dashboard/today-orders${toQuery({ limit })}`,
+      ),
+    getStaffStockSummary: () =>
+      request<StockSummary>('/admin/dashboard/stock-summary'),
+    getStaffFinance: (period: 'today' | 'week' | 'month' = 'today') =>
+      request<FinanceSummary>(`/admin/dashboard/finance${toQuery({ period })}`),
+    getStaffStoreStatus: () =>
+      request<StoreStatus | null>('/admin/dashboard/store-status'),
+    getStaffPermissions: () =>
+      request<{ role: string; kopdesId: string | null; permissions: string[] }>(
+        '/admin/dashboard/me',
+      ),
+
+    // ── Stok ──
+    getStockList: async (
+      filter: 'all' | 'low' | 'out' = 'all',
+      page = 1,
+      limit = 20,
+    ) => {
+      const body = await rawRequest(
+        `/admin/inventory/products${toQuery({ filter, page, limit })}`,
+      );
+      return {
+        items: (body?.items ?? []) as StockItem[],
+        meta: (body?.meta ?? {
+          total: 0,
+          page,
+          limit,
+          totalPages: 1,
+        }) as PageMeta,
+      };
+    },
+
+    // ── Pesanan sisi staf ──
+    getAdminOrders: async (
+      status: string | undefined,
+      page = 1,
+      limit = 20,
+    ) => {
+      const body = await rawRequest(
+        `/admin/orders${toQuery({ page, limit, ...(status ? { status } : {}) })}`,
+      );
+      return {
+        items: (body?.data ?? []) as Order[],
+        meta: (body?.meta ?? {
+          total: 0,
+          page,
+          limit,
+          totalPages: 1,
+        }) as PageMeta,
+      };
+    },
+    updateAdminOrderStatus: (id: string, status: string) =>
+      request<Order>(`/admin/orders/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }),
   };
 }
 
@@ -159,9 +326,26 @@ export type {
   AuthResult,
   Cart,
   CartItem,
+  Category,
+  DashboardSummary,
+  FinanceSummary,
+  MarketplaceFilter,
+  MarketplaceProduct,
+  MarketplaceSellerType,
+  MarketplaceSort,
   Order,
+  PageMeta,
+  Paginated,
   PaymentMethod,
   Product,
   ProductListResult,
+  Review,
+  ReviewableItem,
+  Role,
+  StaffTodayOrder,
+  StockItem,
+  StockSummary,
+  StoreStatus,
   User,
 } from './types';
+export { Permissions, can } from './types';

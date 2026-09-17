@@ -1,0 +1,477 @@
+/*
+ * Komponen bersama KOPDES web — padanan `lib/shared/widgets/apple_ui.dart`.
+ *
+ * Kelas berprefiks `kc-` (kopdes component) supaya tidak bertabrakan dengan
+ * kelas halaman yang sudah ada di globals.css masing-masing app.
+ *
+ * Plain CSS, bukan CSS Modules: file ini di-import dari `shared/` yang berada
+ * di luar folder app, dan CSS Modules lintas-folder bergantung pada perilaku
+ * bundler yang mudah berubah antar versi Next. Prefiks di atas yang menjaga
+ * nama kelasnya tetap unik.
+ */
+
+/* ── Kartu (AppleCard) ── */
+.kc-card {
+  background: var(--canvas);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-soft);
+}
+
+.kc-card--flat {
+  box-shadow: none;
+}
+
+.kc-card--pad {
+  padding: var(--sp-base);
+}
+
+.kc-card--tap {
+  transition:
+    box-shadow var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
+}
+
+.kc-card--tap:hover {
+  box-shadow: var(--sh-card-hover);
+}
+
+/* Mobile memakai efek tekan; padanan webnya hanya saat benar-benar ditekan. */
+.kc-card--tap:active {
+  transform: scale(0.985);
+}
+
+/* ── Grup daftar dengan pemisah (AppleListGroup) ── */
+.kc-group {
+  background: var(--canvas);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+.kc-group > * + * {
+  border-top: 1px solid var(--hairline-soft);
+}
+
+/* ── Judul bagian (AppleSectionHeader) ── */
+.kc-section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.kc-section-head__title {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 0;
+}
+
+.kc-section-head__action {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  padding: var(--sp-xs) var(--sp-sm);
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+}
+
+.kc-section-head__action:hover {
+  background: var(--primary-tint);
+}
+
+/* ── Lencana (AppleBadge) ── */
+.kc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.kc-badge--kopdes {
+  background: var(--kopdes-surface);
+  color: var(--kopdes-text);
+}
+
+.kc-badge--umkm {
+  background: var(--umkm-surface);
+  color: var(--umkm-text);
+}
+
+.kc-badge--primary {
+  background: var(--primary-tint);
+  color: var(--primary-active);
+}
+
+.kc-badge--success {
+  background: #e7f6ec;
+  color: var(--kopdes-text);
+}
+
+.kc-badge--warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.kc-badge--muted {
+  background: var(--surface-strong);
+  color: var(--muted);
+}
+
+/* ── Chip pilihan (AppleChip) ── */
+.kc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* Target sentuh 44px, sama dengan aturan aksesibilitas di mobile. */
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  transition: background var(--t-fast) var(--ease);
+}
+
+.kc-chip:hover {
+  background: var(--surface-soft);
+}
+
+.kc-chip[aria-selected='true'],
+.kc-chip--selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+/* ── Tombol ── */
+.kc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-sm);
+  min-height: 44px;
+  padding: 0 var(--sp-base);
+  border-radius: var(--r-button);
+  font-size: 14px;
+  font-weight: 700;
+  transition:
+    background var(--t-fast) var(--ease),
+    opacity var(--t-fast) var(--ease);
+}
+
+.kc-btn--primary {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.kc-btn--primary:hover:not(:disabled) {
+  background: var(--primary-active);
+}
+
+.kc-btn--secondary {
+  background: var(--canvas);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+}
+
+.kc-btn--secondary:hover:not(:disabled) {
+  background: var(--surface-soft);
+}
+
+.kc-btn--ghost {
+  background: transparent;
+  color: var(--primary);
+  min-height: 36px;
+  padding: 0 var(--sp-sm);
+}
+
+.kc-btn--ghost:hover:not(:disabled) {
+  background: var(--primary-tint);
+}
+
+.kc-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.kc-btn--block {
+  width: 100%;
+}
+
+/* ── Kartu produk (AppleProductTile) ── */
+.kc-product {
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  height: 100%;
+}
+
+.kc-product__media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--surface-strong);
+  display: grid;
+  place-items: center;
+  color: var(--muted-soft);
+  overflow: hidden;
+}
+
+.kc-product__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.kc-product__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--sp-md);
+  flex: 1;
+}
+
+.kc-product__name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  /* Dua baris lalu dipotong — sama dengan maxLines: 2 di kartu Flutter. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.kc-product__seller {
+  font-size: 11.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kc-product__price {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-top: auto;
+}
+
+.kc-product__strike {
+  font-size: 11.5px;
+  color: var(--muted-soft);
+  text-decoration: line-through;
+}
+
+/* ── Grid produk responsif ──
+   auto-fill, bukan jumlah kolom tetap: kartu ikut menyesuaikan lebar yang
+   benar-benar tersedia, termasuk saat grid berada di dalam kolom sempit. */
+.kc-grid {
+  display: grid;
+  gap: var(--sp-md);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+@media (min-width: 600px) {
+  .kc-grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+}
+
+/* ── Tata letak dua kolom (daftar + ringkasan sticky) ── */
+.kc-split {
+  display: grid;
+  gap: var(--sp-lg);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .kc-split {
+    /* 64% / 36% — padanan `summaryWidth` pada OrdersSpec. */
+    grid-template-columns: minmax(0, 1.75fr) minmax(280px, 1fr);
+  }
+
+  .kc-split__aside {
+    position: sticky;
+    top: var(--sp-base);
+  }
+}
+
+/* ── Skeleton ── */
+.kc-skeleton {
+  background: #e8e8ea;
+  border-radius: var(--r-sm);
+  animation: kc-pulse 1.4s var(--ease) infinite;
+}
+
+@keyframes kc-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ── Keadaan kosong & galat ── */
+.kc-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-xl) var(--sp-base);
+  text-align: center;
+}
+
+.kc-message__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.kc-message__body {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 36ch;
+}
+
+/* ── Strip kepercayaan (SafeShoppingBanner) ── */
+.kc-trust {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-md) var(--sp-base);
+  background: #fdeef0;
+  border: 1px solid rgba(215, 25, 45, 0.13);
+  border-radius: var(--r-card);
+  text-align: left;
+  width: 100%;
+}
+
+/* ── Baris rincian nominal ── */
+.kc-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-sm);
+  font-size: 13.5px;
+}
+
+.kc-line__label {
+  flex: 1;
+  color: var(--muted);
+}
+
+.kc-line__value {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.kc-line--total .kc-line__label {
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.kc-line--total .kc-line__value {
+  color: var(--primary);
+  font-weight: 800;
+  font-size: 18px;
+}
+
+/* ── Stepper jumlah ── */
+.kc-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.kc-stepper button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.kc-stepper button:disabled {
+  color: var(--muted-soft);
+  cursor: not-allowed;
+}
+
+.kc-stepper__value {
+  min-width: 40px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ── Tab tersegmentasi (OrdersSegmentedTabs) ── */
+.kc-tabs {
+  display: flex;
+  gap: var(--sp-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.kc-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.kc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 var(--sp-base);
+  border-radius: var(--r-md);
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.kc-tab[aria-selected='true'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.kc-tab__badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.kc-tab[aria-selected='true'] .kc-tab__badge {
+  background: var(--on-primary);
+  color: var(--primary);
+}

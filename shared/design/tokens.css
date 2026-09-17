@@ -1,0 +1,262 @@
+/*
+ * Token desain KOPDES — diport dari `lib/core/theme/theme.dart` pada aplikasi
+ * Flutter, supaya web dan mobile memakai angka yang sama, bukan angka yang
+ * mirip. Tiap nilai di sini punya pasangannya di Dart; kalau salah satu
+ * berubah, keduanya harus berubah.
+ *
+ * Scaffold web sebelumnya memakai palet hijau (#1f8a4c) sementara aplikasi
+ * mobile memakai merah Koperasi Merah Putih — itulah yang diperbaiki file ini.
+ */
+
+:root {
+  /* ── Merah utama (AppColors) ── */
+  --primary: #d32f2f;
+  --primary-active: #b71c1c;
+  --primary-soft: #ffcdd2;
+  --primary-tint: #ffebee;
+  --primary-faint: rgba(211, 47, 47, 0.12);
+  --dark-red: #79000d;
+  --bright-red: #ed102d;
+  --yellow-accent: #ffc400;
+
+  /* ── Teks & garis ── */
+  --ink: #222222;
+  --body: #3f3f3f;
+  --muted: #6a6a6a;
+  --muted-soft: #929292;
+  --hairline: #dddddd;
+  --hairline-soft: #ebebeb;
+  --border-strong: #c1c1c1;
+
+  /* ── Permukaan ── */
+  --canvas: #ffffff;
+  --surface-soft: #f7f7f7;
+  --surface-strong: #f2f2f2;
+  --on-primary: #ffffff;
+
+  /* ── Status ── */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --error-text: #c13515;
+
+  /* ── Lencana penjual (OrderColors di Flutter) ── */
+  --kopdes-surface: #e7f6ec;
+  --kopdes-text: #15803d;
+  --umkm-surface: #f0e8ff;
+  --umkm-text: #7442c8;
+
+  /* ── Dashboard staf (KopdesEmployeeColors) ── */
+  --staff-bg: #f7f7f8;
+  --staff-text-primary: #1d1d1f;
+  --staff-text-secondary: #6e6e73;
+  --staff-divider: rgba(60, 60, 67, 0.1);
+  --staff-success: #159455;
+  --staff-info: #2878d0;
+  --staff-purple: #7442c8;
+
+  /* ── Spacing (AppSpacing) ── */
+  --sp-xxs: 2px;
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 12px;
+  --sp-base: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+  --sp-xxl: 48px;
+  --sp-section: 64px;
+
+  /* ── Radius (AppRadius) ── */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 32px;
+  --r-button: 12px;
+  --r-card: 16px;
+  --r-modal: 24px;
+  --r-pill: 9999px;
+
+  /* ── Elevasi (AppElevation) ── */
+  --sh-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --sh-card-hover: 0 6px 18px rgba(0, 0, 0, 0.1);
+  --sh-hairline: 0 1px 0 rgba(0, 0, 0, 0.04);
+  --sh-soft: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  /* ── Animasi (AppAnimation) ── */
+  --t-fast: 150ms;
+  --t-normal: 250ms;
+  --t-slow: 350ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /*
+   * Breakpoint — sama dengan `OrdersSpec.fromWidth` dan
+   * `KopdesResponsiveSpec.fromWidth`: compact <360, phone <600,
+   * tablet <1024, large ≥1024. Ditulis sebagai catatan karena CSS
+   * belum bisa memakai custom property di dalam media query.
+   *
+   *   compact : max-width 359px   → padding 12px
+   *   phone   : 360–599px         → padding 16px
+   *   tablet  : 600–1023px        → padding 24px, konten maks 960px
+   *   large   : ≥1024px           → padding 32px, konten maks 1120px
+   */
+  --page-padding: 16px;
+  --content-max: 1120px;
+}
+
+@media (max-width: 359px) {
+  :root {
+    --page-padding: 12px;
+  }
+}
+
+@media (min-width: 600px) {
+  :root {
+    --page-padding: 24px;
+    --content-max: 960px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --page-padding: 32px;
+    --content-max: 1120px;
+  }
+}
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* Skala teks pengguna tidak pernah dimatikan — sama dengan aturan
+     aksesibilitas di aplikasi mobile. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family:
+    'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
+  color: var(--body);
+  background: var(--surface-soft);
+  line-height: 1.45;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Fokus keyboard harus selalu terlihat — traversal fokus adalah satu-satunya
+   cara menavigasi portal ini di desktop. */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* ── Tipografi (AppTypography) ── */
+.t-display-xl {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.t-display-lg {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.t-display-md {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+.t-title-lg {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.t-title-md {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.t-body-lg {
+  font-size: 16px;
+  color: var(--body);
+}
+.t-body-md {
+  font-size: 14px;
+  color: var(--body);
+}
+.t-caption {
+  font-size: 13px;
+  color: var(--muted);
+}
+.t-caption-sm {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Utilitas tata letak ── */
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding-inline: var(--page-padding);
+}
+
+.stack-sm > * + * {
+  margin-top: var(--sp-sm);
+}
+.stack-md > * + * {
+  margin-top: var(--sp-md);
+}
+.stack-base > * + * {
+  margin-top: var(--sp-base);
+}
+.stack-lg > * + * {
+  margin-top: var(--sp-lg);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,10 +1,19 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { AppShell } from '@/components/AppShell';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'KOPDES — Marketplace & Dashboard',
-  description: 'Belanja produk koperasi & UMKM desa dan kelola akun Anda.',
+  title: 'KMP Mitra — Marketplace Koperasi Desa',
+  description:
+    'Belanja produk Kopdes dan Mitra UMKM desa, kelola pesanan dan akun Anda.',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  // Pengguna tetap boleh memperbesar halaman — sama dengan aturan
+  // aksesibilitas di aplikasi mobile: skala teks tidak pernah dimatikan.
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -15,21 +24,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body>
-        <header className="topbar">
-          <Link href="/" className="brand">
-            KOP<span>DES</span>
-          </Link>
-          <nav className="topnav">
-            <Link href="/">Marketplace</Link>
-            <Link href="/orders">Pesanan</Link>
-            <Link href="/dashboard">Dashboard</Link>
-            <Link href="/cart">🛒 Keranjang</Link>
-            <Link href="/login" className="btn-sm">
-              Masuk
-            </Link>
-          </nav>
-        </header>
-        <main className="main">{children}</main>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
