@@ -1,0 +1,17 @@
+# Dependencies & build output untuk kedua app Next.js
+**/node_modules/
+**/.next/
+**/out/
+**/.turbo/
+
+# Env
+**/.env
+**/.env.local
+**/.env*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Misc
+.DS_Store
