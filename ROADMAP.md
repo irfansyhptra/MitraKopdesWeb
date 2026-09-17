@@ -42,10 +42,14 @@ Breakpoint sama dengan `OrdersSpec.fromWidth` / `KopdesResponsiveSpec`:
 ## Tahap 1 — Page User
 
 ### 1a. Sudah selesai
-- **Beranda** (`/`) — server component, seksi Produk Terlaris & UMKM Pilihan
+- **Beranda** (`/`) — header gradien + pencarian, ringkasan keanggotaan &
+  aksi cepat, deret kategori, Promo Terbaik, UMKM Pilihan, Terlaris, dua
+  banner. Bagian yang tidak bergantung pembukanya tetap server component
 - **Marketplace** (`/marketplace`) — pencarian ditunda 350 ms, filter jenis
-  penjual/kategori/urutan dikirim ke server, muat-lebih berhalaman,
-  penjaga permintaan basi
+  penjual/kategori/urutan dikirim ke server, tile kategori dipisah
+  Makanan/Ritel lewat `group`, muat-lebih berhalaman, penjaga permintaan basi
+- **Asisten AI** (`/ai-assistant`) — `POST /ai/chat`, kartu saran + pill,
+  gelembung pesan dengan efek ketik 15 ms
 - **Pesanan** (`/orders`) — tiga subpage (Keranjang / Diproses / Selesai),
   grup per penjual, checkbox tiga keadaan, stepper dengan pembaruan
   optimistis + rollback, konfirmasi hapus, Ringkasan Belanja sticky dua kolom
@@ -73,8 +77,7 @@ redirect supaya tautan lama tidak putus.
 2. **Halaman informasi** (`/info/[slug]`) — `GET /content/:slug` sudah ada
 3. **Pengajuan mitra UMKM** (`/membership/register`) — padanan
    `MembershipRegisterScreen`
-4. **AI Assistant pelanggan** (`/ai-assistant`) — `POST /ai/chat`
-5. **Chat dengan Kopdes** (`/chat/[id]`) — modul `chat` sudah ada di backend
+4. **Chat dengan Kopdes** (`/chat/[id]`) — modul `chat` sudah ada di backend
 6. **Lupa password** — cek dulu apakah backend punya endpoint-nya; di Flutter
    layarnya ada tapi belum tentu terhubung
 7. **Notifikasi** — **tertahan**: backend belum punya modul notifikasi sama
@@ -147,7 +150,8 @@ Portal di bawah `/super-admin`, hanya `SUPER_ADMIN`. Padanan
 | Tahap 3 · Audit log | Pembaca `AuditLog` dengan filter aktor/aksi/tanggal |
 | Tahap 1c · Ubah ulasan | `PATCH /reviews/:id` sudah ada, UI-nya belum |
 | Tahap 1c · Notifikasi | Tidak ada modul notifikasi di backend; layar mobile memakai data tetap |
-| Tahap 1c · Saldo & poin | Baris statistik di `ProfileScreen` ("Rp 1.250.000", "1.250 Poin") adalah angka tetap di kode, tanpa endpoint. Tidak ditiru ke web |
+| Tahap 1c · Saldo & poin | Baris statistik di `ProfileScreen` ("Rp 1.250.000", "1.250 Poin") adalah angka tetap di kode, tanpa endpoint. Slot kartunya sudah ada di web, isinya tanda hubung sampai endpoint-nya dibuat |
+| Tahap 1c · Promo Terbaik | Empat produk promo di `HomeScreen` ditulis tetap di kode. Web memakai produk ber-`discountPrice` sungguhan, jadi seksinya hilang kalau belum ada diskon |
 | Tahap 2 · Nama toko di keranjang | `GET /cart` belum mengirim nama penjual per baris, sehingga grup keranjang web masih memakai jenis penjual sebagai nama |
 
 ## Menjalankan

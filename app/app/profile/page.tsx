@@ -17,12 +17,15 @@ import {
 import type { User } from '@shared/api';
 
 /**
- * Profil — padanan `ProfileScreen` pada aplikasi Flutter.
+ * Profil — padanan `ProfileScreen` pada aplikasi Flutter: header merah
+ * melengkung, kartu identitas yang menindihnya, deret kartu statistik,
+ * bilah pintasan, lalu tiga seksi menu.
  *
- * Bedanya dengan versi mobile: baris statistik di sana ("Rp 1.250.000",
- * "1.250 Poin") masih angka tetap di dalam kode karena belum ada endpoint
- * saldo maupun poin. Angka itu tidak ditiru di sini — menampilkan saldo palsu
- * pada halaman akun jauh lebih berbahaya daripada tidak menampilkannya.
+ * Satu hal sengaja berbeda. Di mobile, "Saldo Belanja Rp 1.250.000" dan
+ * "1.250 Poin" ditulis tetap di dalam kode — tidak ada endpoint saldo maupun
+ * poin di backend. Angka itu tidak disalin ke sini: halaman akun yang
+ * menyebut nominal yang tidak ada jauh lebih berbahaya daripada kartu yang
+ * berisi tanda hubung. Bentuk kartunya tetap, tinggal diisi.
  */
 
 interface MenuItem {
@@ -48,8 +51,18 @@ const SECTIONS: { title: string; items: MenuItem[] }[] = [
         href: '/profile/alamat',
       },
       {
+        label: 'Metode Pembayaran',
+        desc: 'Kelola kartu dan metode pembayaran',
+        pending: true,
+      },
+      {
         label: 'Keamanan Akun',
-        desc: 'Password dan verifikasi akun',
+        desc: 'Password, PIN, dan verifikasi akun',
+        pending: true,
+      },
+      {
+        label: 'Notifikasi',
+        desc: 'Atur preferensi notifikasi Anda',
         pending: true,
       },
     ],
@@ -57,6 +70,11 @@ const SECTIONS: { title: string; items: MenuItem[] }[] = [
   {
     title: 'Layanan Koperasi',
     items: [
+      {
+        label: 'Asisten KMP Mitra',
+        desc: 'Tanya produk, promo, dan pesanan',
+        href: '/ai-assistant',
+      },
       {
         label: 'Riwayat Pesanan',
         desc: 'Lihat pesanan dan status pengiriman',
@@ -77,11 +95,7 @@ const SECTIONS: { title: string; items: MenuItem[] }[] = [
   {
     title: 'Pengaturan',
     items: [
-      {
-        label: 'Privasi',
-        desc: 'Kebijakan privasi dan keamanan',
-        pending: true,
-      },
+      { label: 'Privasi', desc: 'Kebijakan privasi dan keamanan', pending: true },
       {
         label: 'Tentang Aplikasi',
         desc: 'Informasi tentang KMP Mitra',
@@ -95,6 +109,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [addressCount, setAddressCount] = useState<number | null>(null);
+  const [cartCount, setCartCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,10 +119,16 @@ export default function ProfilePage() {
     try {
       const me = await api.me();
       setUser(me);
-      // Jumlah alamat bersifat tambahan; kegagalannya tidak menutup profil.
+      // Dua angka tambahan; kegagalannya tidak menutup profil.
       void api
         .getAddresses()
         .then((list) => setAddressCount(list.length))
+        .catch(() => undefined);
+      void api
+        .getCart()
+        .then((cart) =>
+          setCartCount(cart.items.reduce((n, i) => n + i.quantity, 0)),
+        )
         .catch(() => undefined);
     } catch (e) {
       setError((e as Error).message);
@@ -132,7 +153,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="stack-md">
-        <Skeleton height={28} width="35%" />
+        <Skeleton height={140} radius={20} />
         <Card className="stack-sm">
           <Skeleton height={56} width="56px" radius={28} />
           <Skeleton height={18} width="45%" />
@@ -156,67 +177,128 @@ export default function ProfilePage() {
   const initial = user.name.trim()[0]?.toUpperCase() ?? '?';
 
   return (
-    <>
-      <div className="page-head">
-        <div className="page-head__text">
-          <h1 className="page-title">Profil</h1>
-          <p className="page-sub">Kelola akun dan layanan koperasimu</p>
+    <div className="stack-md">
+      <header className="kc-hero" style={{ paddingBottom: 'var(--sp-xl)' }}>
+        <div className="kc-hero__top">
+          <div className="kc-hero__who">
+            <p className="kc-hero__title">Profil Saya</p>
+            <p className="kc-hero__subtitle">
+              Kelola informasi &amp; pengaturan akun Anda
+            </p>
+          </div>
+          <div className="kc-hero__acts">
+            <Link
+              href="/orders"
+              className="kc-iconbtn"
+              aria-label={
+                cartCount ? `Keranjang, ${cartCount} produk` : 'Keranjang'
+              }
+            >
+              <span aria-hidden="true">🛒</span>
+              {!!cartCount && (
+                <span className="kc-iconbtn__badge">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
+      </header>
+
+      <div className="kc-overlap">
+        <Card className="stack-md">
+          <div
+            style={{ display: 'flex', gap: 'var(--sp-base)', alignItems: 'center' }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 56,
+                height: 56,
+                flex: 'none',
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 22,
+                fontWeight: 700,
+                background: 'var(--primary-tint)',
+                color: 'var(--primary-active)',
+              }}
+            >
+              {initial}
+            </span>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)' }}>
+                {user.name}
+              </p>
+              <p className="t-caption-sm">✉ {user.email}</p>
+              {user.phone && <p className="t-caption-sm">☎ {user.phone}</p>}
+              {user.kopdes?.name && (
+                <p className="t-caption-sm">📍 {user.kopdes.name}</p>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 'var(--sp-sm)', flexWrap: 'wrap' }}>
+            <Badge variant="success">★ Anggota Aktif</Badge>
+            <Badge variant="primary">{roleLabel(user.role)}</Badge>
+            {addressCount != null && (
+              <Badge variant="muted">{addressCount} alamat tersimpan</Badge>
+            )}
+          </div>
+        </Card>
       </div>
+
+      <div className="kc-rail">
+        <Stat
+          icon="🏛️"
+          tint="#ffebee"
+          label="Koperasi"
+          value={user.kopdes?.name ?? 'Belum terdaftar'}
+        />
+        {/* Dua kartu berikutnya menunggu endpoint-nya; lihat catatan di atas. */}
+        <Stat icon="👛" tint="#ffebee" label="Saldo Belanja" value="—" muted />
+        <Stat icon="★" tint="#fff6e0" label="Poin Koperasi" value="—" muted />
+        <Stat
+          icon="✅"
+          tint="#e7f6ec"
+          label="Status"
+          value="Aktif"
+          color="var(--success)"
+        />
+      </div>
+
+      <Card pad={false}>
+        <nav className="kc-shortcut" aria-label="Pintasan">
+          <Link href="/orders">
+            <span className="kc-shortcut__icon" aria-hidden="true">
+              🧾
+            </span>
+            Pesanan Saya
+          </Link>
+          <Link href="/orders">
+            <span className="kc-shortcut__icon" aria-hidden="true">
+              🛒
+            </span>
+            Keranjang
+          </Link>
+          <Link href="/marketplace">
+            <span className="kc-shortcut__icon" aria-hidden="true">
+              🏪
+            </span>
+            Belanja
+          </Link>
+          <Link href="/ai-assistant">
+            <span className="kc-shortcut__icon" aria-hidden="true">
+              ✦
+            </span>
+            Asisten
+          </Link>
+        </nav>
+      </Card>
 
       <div className="kc-split">
         <div className="stack-md">
-          <Card className="stack-md">
-            <div
-              style={{
-                display: 'flex',
-                gap: 'var(--sp-base)',
-                alignItems: 'center',
-              }}
-            >
-              <span
-                aria-hidden="true"
-                style={{
-                  width: 56,
-                  height: 56,
-                  flex: 'none',
-                  borderRadius: '50%',
-                  display: 'grid',
-                  placeItems: 'center',
-                  fontSize: 22,
-                  fontWeight: 700,
-                  background: 'var(--primary-tint)',
-                  color: 'var(--primary-active)',
-                }}
-              >
-                {initial}
-              </span>
-              <div style={{ minWidth: 0 }}>
-                <p
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 700,
-                    color: 'var(--ink)',
-                  }}
-                >
-                  {user.name}
-                </p>
-                <p className="t-caption-sm">{user.email}</p>
-                {user.phone && <p className="t-caption-sm">{user.phone}</p>}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 'var(--sp-sm)', flexWrap: 'wrap' }}>
-              <Badge variant="primary">{roleLabel(user.role)}</Badge>
-              {user.kopdes?.name && (
-                <Badge variant="kopdes">{user.kopdes.name}</Badge>
-              )}
-              {addressCount != null && (
-                <Badge variant="muted">{addressCount} alamat tersimpan</Badge>
-              )}
-            </div>
-          </Card>
-
           {SECTIONS.map((section) => (
             <div key={section.title}>
               <SectionHeader title={section.title} />
@@ -229,31 +311,53 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        <aside className="kc-split__aside stack-md">
-          <Card className="stack-sm">
-            <SectionHeader title="Akses Cepat" />
-            <Link href="/orders" className="kc-btn kc-btn--secondary kc-btn--block">
-              Pesanan Saya
-            </Link>
-            <Link
-              href="/marketplace"
-              className="kc-btn kc-btn--secondary kc-btn--block"
-            >
-              Marketplace
-            </Link>
-          </Card>
-
+        <aside className="kc-split__aside">
           <Card className="stack-sm">
             <p className="t-caption-sm">
               Keluar akan menghapus sesi di peramban ini.
             </p>
             <Button variant="secondary" block onClick={logout}>
-              Keluar
+              Keluar dari Akun
             </Button>
           </Card>
         </aside>
       </div>
-    </>
+    </div>
+  );
+}
+
+function Stat({
+  icon,
+  tint,
+  label,
+  value,
+  color,
+  muted = false,
+}: {
+  icon: string;
+  tint: string;
+  label: string;
+  value: string;
+  color?: string;
+  muted?: boolean;
+}) {
+  return (
+    <div className="kc-stat" style={{ ['--stat-tint' as string]: tint }}>
+      <span className="kc-stat__icon" aria-hidden="true">
+        {icon}
+      </span>
+      <div>
+        <p className="kc-stat__label">{label}</p>
+        <p
+          className="kc-stat__value"
+          style={{
+            ['--stat-color' as string]: muted ? 'var(--muted-soft)' : color,
+          }}
+        >
+          {value}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -297,12 +401,7 @@ function MenuRow({ item }: { item: MenuItem }) {
   }
 
   return (
-    <div
-      style={{
-        padding: 'var(--sp-md) var(--sp-base)',
-        opacity: 0.65,
-      }}
-    >
+    <div style={{ padding: 'var(--sp-md) var(--sp-base)', opacity: 0.65 }}>
       {body}
     </div>
   );

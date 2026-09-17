@@ -475,3 +475,783 @@
   background: var(--on-primary);
   color: var(--primary);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Bagian di bawah ini memindahkan komponen beranda, marketplace, asisten,
+   dan profil dari aplikasi Flutter ke web. Angkanya diambil dari widget
+   aslinya — tinggi 44px untuk target sentuh, ikon 40px, tile kategori 48px —
+   lalu hanya tata letaknya yang menyesuaikan lebar layar.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Header gradien (CompactHomeHeader / header ProfileScreen) ───────────
+   Di ponsel melebar sampai tepi layar seperti di mobile; begitu halaman
+   punya batas lebar sendiri (≥600px) ia berhenti membentur tepi jendela
+   dan menjadi kartu penuh sudut. */
+.kc-hero {
+  background: linear-gradient(135deg, var(--dark-red), var(--bright-red));
+  color: #fff;
+  padding: var(--sp-base);
+  margin-inline: calc(var(--page-padding) * -1);
+  border-radius: 0 0 28px 28px;
+}
+
+@media (min-width: 600px) {
+  .kc-hero {
+    margin-inline: 0;
+    border-radius: var(--r-lg);
+    padding: var(--sp-lg);
+  }
+}
+
+.kc-hero__top {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+}
+
+.kc-hero__mark {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1.6px solid rgba(255, 255, 255, 0.7);
+}
+
+.kc-hero__who {
+  flex: 1;
+  min-width: 0;
+}
+
+.kc-hero__hello {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.2;
+}
+
+.kc-hero__name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  line-height: 1.15;
+}
+
+.kc-hero__name > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kc-hero__place {
+  font-size: 11px;
+  color: #ffd5da;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kc-hero__acts {
+  display: flex;
+  gap: var(--sp-xs);
+  flex: none;
+}
+
+/* Tombol ikon translusen. Bukan backdrop-filter: yang ada di belakangnya
+   hanya gradien datar, jadi isian translusen memberi hasil yang sama tanpa
+   biaya blur per frame — alasan yang sama dicatat di widget Flutter-nya. */
+.kc-iconbtn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
+.kc-iconbtn::before {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.kc-iconbtn > span {
+  position: relative;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.kc-iconbtn__badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding-inline: 3.5px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--bright-red);
+  border: 1.5px solid #fff;
+  font-size: 8.5px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.kc-hero__search {
+  display: flex;
+  gap: var(--sp-md);
+  margin-top: var(--sp-md);
+}
+
+.kc-hero__field {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding-inline: var(--sp-md);
+  border-radius: 20px;
+  background: var(--canvas);
+  color: var(--muted-soft);
+  font-size: 13.5px;
+  text-align: left;
+}
+
+.kc-hero__field input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: none;
+}
+
+.kc-hero__filter {
+  height: 48px;
+  min-width: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding-inline: var(--sp-md);
+  border-radius: 20px;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── Ringkasan keanggotaan (MembershipSummaryCard) ───────────────────── */
+.kc-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.kc-summary__item {
+  text-align: center;
+  padding-inline: var(--sp-xs);
+  min-width: 0;
+}
+
+.kc-summary__item + .kc-summary__item {
+  border-left: 1px solid var(--hairline-soft);
+}
+
+.kc-summary__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-summary__value {
+  margin-top: 3px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Empat aksi cepat. Labelnya pendek dengan alasan yang sama seperti di
+   Flutter: pada kolom seperempat lebar, "Riwayat Transaksi" terpotong. */
+.kc-quick {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-sm);
+}
+
+.kc-quick a,
+.kc-quick button {
+  height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: var(--r-button);
+  background: var(--surface-soft);
+  border: 1px solid var(--hairline-soft);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--body);
+  transition: background var(--t-fast) var(--ease);
+}
+
+.kc-quick a:hover,
+.kc-quick button:hover {
+  background: var(--surface-strong);
+}
+
+.kc-quick i {
+  font-style: normal;
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ── Rail horizontal (ListView.separated mendatar di mobile) ─────────────
+   Di layar lebar rail berubah jadi grid: menggulir ke samping dengan mouse
+   jauh lebih canggung daripada dengan jempol, dan ruangnya memang ada. */
+.kc-rail {
+  display: flex;
+  gap: var(--sp-md);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: var(--sp-xs);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.kc-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.kc-rail > * {
+  scroll-snap-align: start;
+  flex: none;
+}
+
+@media (min-width: 900px) {
+  .kc-rail--wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    overflow: visible;
+  }
+
+  .kc-rail--wrap > * {
+    width: auto !important;
+  }
+}
+
+/* ── Tile kategori (AppleMenuTile) ───────────────────────────────────── */
+.kc-tile {
+  width: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-sm);
+  text-align: center;
+}
+
+.kc-tile__icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  /* Squircle iOS didekati dengan radius besar; CSS belum punya superellipse. */
+  border-radius: 30%;
+  background: var(--tile-tint, var(--primary-tint));
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.kc-tile:hover .kc-tile__icon {
+  transform: scale(1.04);
+}
+
+.kc-tile[aria-selected='true'] .kc-tile__icon {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.kc-tile__label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--body);
+  line-height: 1.2;
+}
+
+/* ── Kartu promo (AppleProductTile) ──────────────────────────────────── */
+.kc-promo {
+  width: 148px;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  box-shadow: var(--sh-soft);
+}
+
+.kc-promo__media {
+  position: relative;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-soft);
+  font-size: 30px;
+}
+
+.kc-promo__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.kc-promo__badge {
+  position: absolute;
+  top: var(--sp-sm);
+  left: var(--sp-sm);
+  padding: 2px 6px;
+  border-radius: var(--r-xs);
+  background: var(--primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.kc-promo__body {
+  padding: var(--sp-sm) var(--sp-md) var(--sp-md);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.kc-promo__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.kc-promo__sub {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.kc-promo__price {
+  margin-top: auto;
+  padding-top: var(--sp-xs);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* ── Banner ajakan (LocalShoppingBanner / MembershipBanner) ──────────── */
+.kc-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-base);
+  padding: var(--sp-base);
+  border-radius: var(--r-card);
+  background: linear-gradient(135deg, var(--dark-red), var(--bright-red));
+  color: #fff;
+}
+
+.kc-banner--soft {
+  background: var(--primary-tint);
+  color: var(--ink);
+  border: 1px solid var(--primary-soft);
+}
+
+.kc-banner__icon {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 22px;
+}
+
+.kc-banner--soft .kc-banner__icon {
+  background: var(--canvas);
+}
+
+.kc-banner__title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kc-banner__body {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+/* ── Kartu statistik profil (ProfileScreen) ──────────────────────────── */
+.kc-stat {
+  width: 130px;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  padding: var(--sp-md);
+  border-radius: var(--r-card);
+  background: var(--canvas);
+  border: 1px solid var(--hairline-soft);
+  box-shadow: var(--sh-soft);
+}
+
+.kc-stat__icon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 13px;
+  background: var(--stat-tint, var(--primary-tint));
+}
+
+.kc-stat__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted-soft);
+}
+
+.kc-stat__value {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--stat-color, var(--ink));
+}
+
+/* ── Bilah pintasan profil ───────────────────────────────────────────── */
+.kc-shortcut {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.kc-shortcut a,
+.kc-shortcut button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--sp-xs);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--body);
+}
+
+.kc-shortcut__icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  background: var(--primary-tint);
+  font-size: 18px;
+}
+
+/* ── Asisten AI ──────────────────────────────────────────────────────── */
+.kc-chat {
+  display: flex;
+  flex-direction: column;
+  /* Tinggi dikunci ke viewport supaya kolom tulis tetap di bawah tanpa
+     position: fixed, yang akan menutupi navigasi bawah di ponsel. */
+  min-height: min(72vh, 640px);
+  gap: var(--sp-md);
+}
+
+.kc-chat__log {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+  padding-right: var(--sp-xs);
+}
+
+.kc-msg {
+  display: flex;
+  gap: var(--sp-sm);
+  max-width: 100%;
+}
+
+.kc-msg--user {
+  justify-content: flex-end;
+}
+
+.kc-msg__avatar {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #ec4899);
+  color: #fff;
+  font-size: 14px;
+}
+
+.kc-msg__bubble {
+  max-width: min(78%, 620px);
+  padding: var(--sp-md) var(--sp-base);
+  border-radius: var(--r-lg);
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.kc-msg--ai .kc-msg__bubble {
+  background: var(--canvas);
+  border: 1px solid var(--hairline-soft);
+  color: var(--body);
+  border-top-left-radius: var(--r-xs);
+}
+
+.kc-msg--user .kc-msg__bubble {
+  background: var(--primary);
+  color: #fff;
+  border-top-right-radius: var(--r-xs);
+}
+
+.kc-msg--error .kc-msg__bubble {
+  background: var(--primary-tint);
+  border-color: var(--primary-soft);
+  color: var(--error-text);
+}
+
+.kc-msg__caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: kc-blink 1s steps(2, start) infinite;
+}
+
+@keyframes kc-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+.kc-typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.kc-typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted-soft);
+  animation: kc-bounce 1.2s infinite;
+}
+
+.kc-typing i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.kc-typing i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes kc-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.kc-chat__form {
+  display: flex;
+  gap: var(--sp-sm);
+  align-items: flex-end;
+  padding-top: var(--sp-md);
+  border-top: 1px solid var(--hairline-soft);
+}
+
+.kc-chat__input {
+  flex: 1;
+  min-width: 0;
+  max-height: 120px;
+  padding: var(--sp-md) var(--sp-base);
+  border-radius: 24px;
+  border: 1.1px solid var(--hairline);
+  background: var(--surface-soft);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  resize: none;
+}
+
+.kc-chat__input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.kc-chat__send {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 17px;
+  box-shadow: 0 3px 8px rgba(211, 47, 47, 0.24);
+}
+
+.kc-chat__send:disabled {
+  background: var(--muted-soft);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.kc-suggest {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-md);
+}
+
+@media (min-width: 600px) {
+  .kc-suggest {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.kc-suggest button {
+  display: flex;
+  gap: var(--sp-md);
+  align-items: flex-start;
+  text-align: left;
+  padding: var(--sp-md);
+  border-radius: var(--r-lg);
+  background: var(--canvas);
+  border: 1.2px solid var(--hairline-soft);
+  box-shadow: var(--sh-soft);
+  transition:
+    transform var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+
+.kc-suggest button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sh-card);
+}
+
+.kc-suggest__icon {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  background: var(--suggest-tint, var(--primary-tint));
+}
+
+.kc-suggest__title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.kc-suggest__desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+  margin-top: var(--sp-xs);
+}
+
+.kc-pills {
+  display: flex;
+  gap: var(--sp-sm);
+  flex-wrap: wrap;
+}
+
+.kc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 var(--sp-md);
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--body);
+}
+
+.kc-pill:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Kartu yang menindih kaki header gradien — susunan yang sama dengan Stack
+   berisi header merah + kartu profil pada ProfileScreen. */
+.kc-overlap {
+  margin-top: -28px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Deret ikon aksi di header profil, memakai gaya tombol yang sama dengan
+   header beranda. */
+.kc-hero__title {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.kc-hero__subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: var(--sp-xs);
+}

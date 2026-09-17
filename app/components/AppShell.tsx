@@ -17,11 +17,18 @@ interface NavItem {
   href: string;
   label: string;
   icon: string;
+  accent?: boolean;
 }
 
+/**
+ * Tujuan navigasi — sama persis dengan `CustomBottomNavBar` di mobile:
+ * Beranda, Marketplace, Asisten, Pesanan, Profil. Asisten diberi aksen,
+ * seperti `isAccent` pada item yang sama di Dart.
+ */
 const NAV: NavItem[] = [
   { href: '/', label: 'Beranda', icon: '⌂' },
   { href: '/marketplace', label: 'Marketplace', icon: '◍' },
+  { href: '/ai-assistant', label: 'Asisten', icon: '✦', accent: true },
   { href: '/orders', label: 'Pesanan', icon: '☰' },
   { href: '/profile', label: 'Profil', icon: '☻' },
 ];
@@ -93,6 +100,7 @@ export function AppShell({
             key={item.href}
             href={item.href}
             aria-current={isActive(pathname, item.href) ? 'page' : undefined}
+            data-accent={item.accent ? 'true' : undefined}
           >
             <span className="bottomnav__icon" aria-hidden="true">
               {item.icon}

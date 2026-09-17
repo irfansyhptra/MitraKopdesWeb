@@ -297,6 +297,21 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
         body: JSON.stringify(payload),
       }),
 
+    // ── Asisten AI ──
+    // Hanya `/ai/chat`. Endpoint AI yang lain (`/ai/management`,
+    // `/ai/inventory`, `/ai/anomaly`) dijaga peran staf, jadi memanggilnya
+    // dari halaman pelanggan hanya menghasilkan 403. Versi Flutter memilih
+    // endpoint dengan mencocokkan kata pada kalimat pengguna — pemilihan itu
+    // milik backend, bukan klien.
+    aiChat: async (message: string) => {
+      const body = await rawRequest('/ai/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      });
+      const text = body?.response ?? body?.data;
+      return typeof text === 'string' ? text : '';
+    },
+
     // ── Dashboard staf Kopdes ──
     // Satu endpoint per bagian: kalau rekap keuangan gagal, kartu pesanan
     // dan stok tetap tampil.

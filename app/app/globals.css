@@ -467,3 +467,19 @@
   max-width: 400px;
   margin: var(--sp-xl) auto;
 }
+
+/* Tujuan beraksen pada navigasi bawah — padanan `isAccent` di
+   `CustomBottomNavBar`. Aksennya lewat isian solid, bukan warna teks saja. */
+.bottomnav a[data-accent='true'] .bottomnav__icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.bottomnav a[data-accent='true'][aria-current='page'] .bottomnav__icon {
+  background: var(--primary-active);
+}

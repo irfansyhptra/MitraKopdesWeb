@@ -1,13 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import {
   Badge,
   Chip,
   Message,
   ProductGridSkeleton,
+  SectionHeader,
   SellerBadge,
 } from '@shared/design/ui';
 import { formatRupiah, toRupiah } from '@shared/format';
@@ -25,6 +27,10 @@ import type {
  * Filter dikirim ke server, bukan disaring di browser: menyaring satu halaman
  * secara lokal memberi hasil salah begitu katalog lebih panjang daripada satu
  * halaman, dan tetap mengunduh baris yang akhirnya dibuang.
+ *
+ * Deret tile kategori dipisah Makanan/Barang Ritel memakai `group` dari
+ * backend — pembagian yang sama dengan `foodCategoriesProvider` dan
+ * `retailCategoriesProvider` di aplikasi mobile.
  */
 
 const SELLER_TABS: { id: MarketplaceSellerType; label: string }[] = [
@@ -42,12 +48,50 @@ const SORTS: { id: MarketplaceSort; label: string }[] = [
 
 const PAGE_SIZE = 20;
 
+/** Ikon tile kategori; nama datang dari backend jadi pencocokannya longgar. */
+const CATEGORY_ICONS: [RegExp, string][] = [
+  [/sembako|beras|bahan/i, '🍚'],
+  [/minum|kopi|teh/i, '🥤'],
+  [/instan|mie|makan/i, '🍜'],
+  [/rawat|mandi|bersih/i, '🧼'],
+  [/kosmetik|cantik/i, '💄'],
+  [/sayur|buah|segar/i, '🥬'],
+];
+
+const TILE_TINTS = [
+  '#ffebee',
+  '#e7f6ec',
+  '#fff6e0',
+  '#f0e8ff',
+  '#e3f0ff',
+  '#fdeaf4',
+];
+
+function iconFor(name: string): string {
+  return CATEGORY_ICONS.find(([re]) => re.test(name))?.[1] ?? '🛍️';
+}
+
 export default function MarketplacePage() {
-  const [filter, setFilter] = useState<MarketplaceFilter>({
-    sellerType: 'all',
+  // `useSearchParams` menuntut Suspense saat prerender; beranda menautkan
+  // ke sini dengan `?q=`, `?categoryId=`, dan `?sellerType=`.
+  return (
+    <Suspense fallback={<ProductGridSkeleton count={8} />}>
+      <MarketplaceBrowser />
+    </Suspense>
+  );
+}
+
+function MarketplaceBrowser() {
+  const params = useSearchParams();
+  const initialQuery = params?.get('q') ?? '';
+
+  const [filter, setFilter] = useState<MarketplaceFilter>(() => ({
+    sellerType: (params?.get('sellerType') as MarketplaceSellerType) ?? 'all',
     sort: 'relevance',
-  });
-  const [searchInput, setSearchInput] = useState('');
+    categoryId: params?.get('categoryId') ?? undefined,
+    search: initialQuery || undefined,
+  }));
+  const [searchInput, setSearchInput] = useState(initialQuery);
   const [categories, setCategories] = useState<Category[]>([]);
 
   const [items, setItems] = useState<MarketplaceProduct[]>([]);
@@ -166,31 +210,6 @@ export default function MarketplacePage() {
           ))}
         </div>
 
-        {categories.length > 0 && (
-          <div className="filterbar__row" aria-label="Kategori">
-            <Chip
-              selected={!filter.categoryId}
-              onClick={() => setFilter((f) => ({ ...f, categoryId: null }))}
-            >
-              Semua Kategori
-            </Chip>
-            {categories.map((cat) => (
-              <Chip
-                key={cat.id}
-                selected={filter.categoryId === cat.id}
-                onClick={() =>
-                  setFilter((f) => ({
-                    ...f,
-                    categoryId: f.categoryId === cat.id ? null : cat.id,
-                  }))
-                }
-              >
-                {cat.name}
-              </Chip>
-            ))}
-          </div>
-        )}
-
         <div className="filterbar__row" aria-label="Urutan">
           {SORTS.map((sort) => (
             <Chip
@@ -203,6 +222,22 @@ export default function MarketplacePage() {
           ))}
         </div>
       </div>
+
+      <CategoryRow
+        title="Filter Makanan"
+        icon="🍽️"
+        categories={categories.filter((c) => c.group === 'FOOD')}
+        selectedId={filter.categoryId ?? null}
+        onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id }))}
+      />
+
+      <CategoryRow
+        title="Filter Barang Ritel"
+        icon="🧺"
+        categories={categories.filter((c) => c.group === 'RETAIL')}
+        selectedId={filter.categoryId ?? null}
+        onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id }))}
+      />
 
       {loading && <ProductGridSkeleton count={8} />}
 
@@ -245,6 +280,59 @@ export default function MarketplacePage() {
         </>
       )}
     </>
+  );
+}
+
+/**
+ * Deret tile kategori — padanan `CategoryFilterRow` di mobile.
+ *
+ * Menekan tile yang sedang aktif melepas filternya, jadi tidak perlu tombol
+ * "Semua Kategori" terpisah; itu juga perilaku `onSelected(null)` di Dart.
+ */
+function CategoryRow({
+  title,
+  icon,
+  categories,
+  selectedId,
+  onSelect,
+}: {
+  title: string;
+  icon: string;
+  categories: Category[];
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
+  if (categories.length === 0) return null;
+
+  return (
+    <section style={{ marginTop: 'var(--sp-lg)' }}>
+      <SectionHeader title={`${icon} ${title}`} />
+      <div className="kc-rail">
+        {categories.map((cat, i) => {
+          const active = selectedId === cat.id;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              className="kc-tile"
+              aria-selected={active}
+              onClick={() => onSelect(active ? null : cat.id)}
+            >
+              <span
+                className="kc-tile__icon"
+                style={{
+                  ['--tile-tint' as string]: TILE_TINTS[i % TILE_TINTS.length],
+                }}
+                aria-hidden="true"
+              >
+                {iconFor(cat.name)}
+              </span>
+              <span className="kc-tile__label">{cat.name}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
