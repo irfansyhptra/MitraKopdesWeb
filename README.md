@@ -16,21 +16,24 @@ website/
 
 ## Menjalankan
 
-### 1. Landing (promo) — port 3100
-```bash
-cd website/landing
-npm install
-npm run dev        # http://localhost:3100
-```
-Tautan CTA mengarah ke app via `NEXT_PUBLIC_APP_URL` (default `http://localhost:3000`).
+Repo ini satu **npm workspace**: `npm install` dijalankan sekali di root
+`website/`, bukan di tiap app. Dependency di-hoist ke `website/node_modules`.
 
-### 2. App (marketplace + dashboard) — port 3000
 ```bash
-cd website/app
-cp .env.local.example .env.local   # atur NEXT_PUBLIC_API_URL
-npm install
-npm run dev        # http://localhost:3000
+cd website
+npm install                        # sekali, untuk kedua app
+
+cp app/.env.local.example app/.env.local   # atur NEXT_PUBLIC_API_URL
+
+npm run dev            # app pelanggan  → http://localhost:3000
+npm run dev:landing    # landing promo  → http://localhost:3100
+
+npm run build          # build kedua app
+npm run typecheck      # tsc --noEmit di kedua app
 ```
+
+Tautan CTA landing mengarah ke app via `NEXT_PUBLIC_APP_URL`
+(default `http://localhost:3000`).
 
 > ⚠️ Backend NestJS default juga di port 3000. Untuk pengembangan lokal,
 > jalankan backend di port lain (mis. `PORT=3001 npm run start:dev`) dan set
@@ -42,14 +45,17 @@ npm run dev        # http://localhost:3000
   lalu dikirim sebagai `Authorization: Bearer`.
 - Registrasi hanya untuk CUSTOMER/UMKM/COURIER (dibatasi backend).
 
-## Yang sudah ada (scaffold)
-- **landing**: hero, daftar fitur, CTA, metadata SEO/OpenGraph, output statis.
-- **app**: marketplace (SSR daftar produk publik), halaman login, dashboard
-  pengguna terlindungi (`/auth/me`).
+## Design system
+Token dan komponen diambil dari aplikasi Flutter lewat `shared/design/`:
+`tokens.css` (padanan `lib/core/theme/theme.dart`), `components.css` dan
+`ui.tsx` (padanan `lib/shared/widgets/apple_ui.dart`). **Jangan menulis
+warna, spacing, atau radius langsung di halaman** — web dan mobile harus
+memakai angka yang sama, bukan angka yang mirip.
 
-## Selanjutnya (belum dibuat)
-Detail produk, keranjang/checkout, riwayat pesanan, dashboard per-peran
-(UMKM/kurir/admin) — dibangun di `app/` mengikuti pola yang sama.
+## Status & urutan pengerjaan
+Lihat [`ROADMAP.md`](./ROADMAP.md). Ringkasnya: fondasi + beranda,
+marketplace, dan halaman Pesanan sudah jadi; sisa page user, lalu portal
+Pegawai Kopdes, lalu Super Admin.
 
 ## Deploy
 Kedua app cocok untuk Vercel (satu project per folder). `landing` menghasilkan
