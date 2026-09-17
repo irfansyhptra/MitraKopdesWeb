@@ -32,6 +32,10 @@ npm run build          # build kedua app
 npm run typecheck      # tsc --noEmit di kedua app
 ```
 
+> Next 16 memakai Turbopack sebagai bundler bawaan, dan `next lint` sudah
+> dihapus dari CLI-nya. Repo ini belum punya konfigurasi ESLint — `tsc` yang
+> menjadi penjaga tipe untuk saat ini.
+
 Tautan CTA landing mengarah ke app via `NEXT_PUBLIC_APP_URL`
 (default `http://localhost:3000`).
 

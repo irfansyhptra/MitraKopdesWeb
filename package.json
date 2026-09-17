@@ -2,7 +2,7 @@
   "name": "kopdes-website",
   "version": "0.1.0",
   "private": true,
-  "description": "Website KMP Mitra — landing promosi + app pelanggan/staf, satu backend NestJS.",
+  "description": "Website KMP Mitra \u2014 landing promosi + app pelanggan/staf, satu backend NestJS.",
   "workspaces": [
     "app",
     "landing"
@@ -15,7 +15,6 @@
     "build:app": "npm run build --workspace=app",
     "build:landing": "npm run build --workspace=landing",
     "start": "npm run start --workspace=app",
-    "lint": "npm run lint --workspace=app",
     "typecheck": "npm run typecheck --workspace=app && npm run typecheck --workspace=landing"
   },
   "engines": {
