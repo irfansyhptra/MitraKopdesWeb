@@ -268,3 +268,35 @@ export interface ReviewableItem {
   umkmProductId?: string | null;
   name: string;
 }
+
+// ── Alamat pengiriman (GET/POST/PUT/DELETE /addresses) ──
+
+export interface Address {
+  id: string;
+  title: string;
+  recipientName: string;
+  phone: string;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  isDefault: boolean;
+}
+
+export interface CreateAddressInput {
+  title: string;
+  recipientName: string;
+  phone: string;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  isDefault?: boolean;
+}
+
+/** Satu langkah pada timeline pesanan (GET /orders/:id/timeline). */
+export interface TimelineEntry {
+  action: string;
+  details?: string | null;
+  createdAt: string;
+}

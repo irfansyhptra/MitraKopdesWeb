@@ -23,7 +23,7 @@ const NAV: NavItem[] = [
   { href: '/', label: 'Beranda', icon: '⌂' },
   { href: '/marketplace', label: 'Marketplace', icon: '◍' },
   { href: '/orders', label: 'Pesanan', icon: '☰' },
-  { href: '/dashboard', label: 'Profil', icon: '☻' },
+  { href: '/profile', label: 'Profil', icon: '☻' },
 ];
 
 function isActive(pathname: string, href: string): boolean {

@@ -51,23 +51,35 @@ Breakpoint sama dengan `OrdersSpec.fromWidth` / `KopdesResponsiveSpec`:
   optimistis + rollback, konfirmasi hapus, Ringkasan Belanja sticky dua kolom
   pada ≥900 px, riwayat berhalaman
 
-### 1b. Sisa page user
-1. **Detail produk** (`/product/[id]`, `/umkm-product/[id]`) — galeri, lencana
-   penjual, stok, pre-order, tombol tambah ke keranjang, daftar ulasan dari
-   `GET /reviews`
-2. **Detail pesanan** (`/orders/[id]`) — timeline status, alamat, rincian
-   pembayaran dari `subtotal`/`shippingFee`/`discountAmount`, tombol
-   **Beri Ulasan** yang muncul hanya bila `/reviews/reviewable/:orderId`
-   mengembalikan isi
-3. **Checkout** (`/checkout`) — alamat, metode bayar, kirim `cartItemIds` yang
-   dicentang. Jangan menambahkan ongkir/biaya layanan di klien: backend
-   yang menghitung, dan versi Flutter-nya pernah menampilkan Rp12.000 yang
-   tidak pernah ditagihkan
-4. **Login & daftar** (`/login`, `/register`) — hanya CUSTOMER/UMKM/COURIER
-   yang boleh mendaftar sendiri
-5. **Profil** (`/dashboard`) — data `/auth/me`, alamat, keluar
-6. **Lacak pengiriman** (`/orders/[id]/lacak`) — jangan menggambar pergerakan
-   palsu bila GPS belum ada datanya
+### 1b. Alur beli & akun ✅ selesai
+| Rute | Padanan Flutter |
+|---|---|
+| `/product/[id]` | `ProductDetailScreen` — galeri, lencana, stok, pre-order, ulasan |
+| `/umkm-product/[id]` | detail produk mitra, endpoint terpisah, layar sama |
+| `/checkout` | `CheckoutScreen` — alamat, metode bayar, `cartItemIds` |
+| `/order-success/[id]` | `OrderSuccessScreen` |
+| `/orders/[id]` | `OrderDetailScreen` + `OrderTimeline` + rincian pembayaran + Beri Ulasan |
+| `/tracking/[id]` | `TrackingScreen` — status & riwayat, tanpa peta palsu |
+| `/profile` | `ProfileScreen` — tiga seksi menu |
+| `/profile/alamat` | kelola alamat pengiriman |
+| `/login`, `/register` | `LoginScreen`, `RegisterScreen` |
+
+`/cart` → `/orders` dan `/dashboard` → `/profile` dipertahankan sebagai
+redirect supaya tautan lama tidak putus.
+
+### 1c. Sisa page user
+1. **Daftar Kopdes & Mitra** (`/koperasi`, `/mitra`) — endpoint `/koperasi`
+   dan `/umkm/nearby` sudah ada; butuh izin lokasi peramban untuk "terdekat"
+2. **Halaman informasi** (`/info/[slug]`) — `GET /content/:slug` sudah ada
+3. **Pengajuan mitra UMKM** (`/membership/register`) — padanan
+   `MembershipRegisterScreen`
+4. **AI Assistant pelanggan** (`/ai-assistant`) — `POST /ai/chat`
+5. **Chat dengan Kopdes** (`/chat/[id]`) — modul `chat` sudah ada di backend
+6. **Lupa password** — cek dulu apakah backend punya endpoint-nya; di Flutter
+   layarnya ada tapi belum tentu terhubung
+7. **Notifikasi** — **tertahan**: backend belum punya modul notifikasi sama
+   sekali, dan layar Flutter-nya memakai daftar tetap di dalam kode. Jangan
+   ditiru ke web; buat endpoint-nya lebih dulu
 
 ---
 
@@ -133,7 +145,9 @@ Portal di bawah `/super-admin`, hanya `SUPER_ADMIN`. Padanan
 |---|---|
 | Tahap 3 · Kelola Koperasi | CRUD `Koperasi` (kini hanya dibaca `/koperasi`) |
 | Tahap 3 · Audit log | Pembaca `AuditLog` dengan filter aktor/aksi/tanggal |
-| Tahap 1b · Ubah ulasan | `PATCH /reviews/:id` sudah ada, UI-nya belum |
+| Tahap 1c · Ubah ulasan | `PATCH /reviews/:id` sudah ada, UI-nya belum |
+| Tahap 1c · Notifikasi | Tidak ada modul notifikasi di backend; layar mobile memakai data tetap |
+| Tahap 1c · Saldo & poin | Baris statistik di `ProfileScreen` ("Rp 1.250.000", "1.250 Poin") adalah angka tetap di kode, tanpa endpoint. Tidak ditiru ke web |
 | Tahap 2 · Nama toko di keranjang | `GET /cart` belum mengirim nama penjual per baris, sehingga grup keranjang web masih memakai jenis penjual sebagai nama |
 
 ## Menjalankan

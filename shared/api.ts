@@ -9,9 +9,11 @@
 // Karena itu ada `pick()` untuk mengambil key yang tepat.
 
 import type {
+  Address,
   ApiResponse,
   AuthResult,
   Cart,
+  CreateAddressInput,
   Category,
   DashboardSummary,
   FinanceSummary,
@@ -28,6 +30,7 @@ import type {
   StockItem,
   StockSummary,
   StoreStatus,
+  TimelineEntry,
   User,
 } from './types';
 
@@ -130,11 +133,22 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
       pick<Cart>(await rawRequest('/cart/clear', { method: 'DELETE' }), 'cart'),
 
     // ── Pesanan ──
-    checkout: async (deliveryAddressId: string, paymentMethod: PaymentMethod) =>
+    /**
+     * Checkout.
+     *
+     * `cartItemIds` adalah baris yang dicentang pemesan; yang tidak disebut
+     * tetap tinggal di keranjang. Nominal sengaja tidak dikirim dari klien —
+     * backend menghitung sendiri subtotal, ongkir, dan diskon.
+     */
+    checkout: async (payload: {
+      paymentMethod: PaymentMethod;
+      deliveryAddressId?: string;
+      cartItemIds?: string[];
+    }) =>
       pick<Order>(
         await rawRequest('/orders/checkout', {
           method: 'POST',
-          body: JSON.stringify({ deliveryAddressId, paymentMethod }),
+          body: JSON.stringify(payload),
         }),
         'order',
       ),
@@ -181,6 +195,24 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
       }),
     me: () => request<User>('/auth/me'),
 
+    // ── Alamat pengiriman ──
+    getAddresses: () => request<Address[]>('/addresses'),
+    createAddress: (payload: CreateAddressInput) =>
+      request<Address>('/addresses', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    deleteAddress: (id: string) =>
+      request<{ id: string }>(`/addresses/${id}`, { method: 'DELETE' }),
+
+    // ── Pesanan: timeline & penerimaan ──
+    getOrderTimeline: async (id: string) => {
+      const body = await rawRequest(`/orders/${id}/timeline`);
+      return (body?.data ?? body?.timeline ?? []) as TimelineEntry[];
+    },
+    confirmReceipt: (id: string) =>
+      request<Order>(`/orders/${id}/confirm-receipt`, { method: 'POST' }),
+
     // ── Marketplace (publik) ──
     // Filter dikirim ke server, bukan disaring di browser: menyaring satu
     // halaman secara lokal memberi hasil salah begitu katalognya lebih
@@ -215,6 +247,9 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
       };
     },
     getCategories: () => request<Category[]>('/categories'),
+    /// Detail produk Mitra UMKM — endpoint terpisah dari produk Kopdes.
+    getUmkmProduct: (id: string) =>
+      request<Record<string, unknown>>(`/umkm/products/${id}`),
 
     // ── Ulasan ──
     getReviews: async (
@@ -322,9 +357,11 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
 export type ApiClient = ReturnType<typeof createApiClient>;
 
 export type {
+  Address,
   ApiResponse,
   AuthResult,
   Cart,
+  CreateAddressInput,
   CartItem,
   Category,
   DashboardSummary,
@@ -346,6 +383,7 @@ export type {
   StockItem,
   StockSummary,
   StoreStatus,
+  TimelineEntry,
   User,
 } from './types';
 export { Permissions, can } from './types';

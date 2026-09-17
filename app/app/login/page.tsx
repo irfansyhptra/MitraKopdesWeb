@@ -1,64 +1,105 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { setTokens } from '@/lib/auth';
+import { Button, Card, SectionHeader } from '@shared/design/ui';
 
+/** Masuk — padanan `LoginScreen` pada aplikasi Flutter. */
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams?.get('next') ?? '/';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitting(true);
     setError(null);
-    setLoading(true);
     try {
-      const res = await api.login(email, password);
-      setTokens(res.accessToken, res.refreshToken);
-      router.push('/dashboard');
+      const result = await api.login(email.trim(), password);
+      setTokens(result.accessToken, result.refreshToken);
+      // Peran staf punya portalnya sendiri; mengarahkan pegawai ke etalase
+      // pelanggan membuatnya harus mencari jalan sendiri ke tempat kerjanya.
+      const home = landingFor(result.user.role);
+      router.replace(next !== '/' ? next : home);
     } catch (err) {
       setError((err as Error).message);
-    } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
 
   return (
-    <div className="card">
-      <h1>Masuk</h1>
-      <form onSubmit={onSubmit}>
-        {error && <div className="error">{error}</div>}
-        <div className="field">
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+    <div className="auth-wrap">
+      <Card className="stack-md">
+        <div>
+          <h1 className="page-title">Masuk</h1>
+          <p className="page-sub">Belanja dan pantau pesananmu di KMP Mitra.</p>
         </div>
-        <div className="field">
-          <label htmlFor="password">Kata sandi</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button className="btn" type="submit" disabled={loading}>
-          {loading ? 'Memproses…' : 'Masuk'}
-        </button>
-      </form>
-      <p className="muted" style={{ marginTop: 16 }}>
-        Akun demo (setelah seed): superadmin@kopdes.co / password123
-      </p>
+
+        <form onSubmit={submit} className="stack-md">
+          <div className="field">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          {error && <p className="form-error">{error}</p>}
+
+          <Button type="submit" block disabled={submitting}>
+            {submitting ? 'Memproses…' : 'Masuk'}
+          </Button>
+        </form>
+
+        <SectionHeader title="Belum punya akun?" />
+        <Link href="/register" className="kc-btn kc-btn--secondary kc-btn--block">
+          Daftar Sekarang
+        </Link>
+      </Card>
     </div>
   );
+}
+
+function landingFor(role: string): string {
+  switch (role) {
+    case 'SUPER_ADMIN':
+      return '/super-admin';
+    case 'ADMIN_KOPDES':
+    case 'PEGAWAI_KOPDES':
+      return '/pegawai';
+    default:
+      return '/';
+  }
 }
