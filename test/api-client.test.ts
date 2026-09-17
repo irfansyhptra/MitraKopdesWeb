@@ -1,0 +1,87 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ApiError, createApiClient } from '@shared/api';
+
+/**
+ * Bentuk pesan galat dari backend.
+ *
+ * Nest mengirim `message` sebagai string ATAU array string, dan beberapa
+ * filter mengirim objek. Sebelum penjagaan ini, objek diteruskan apa adanya
+ * ke `ApiError`, jadi yang dibaca pemakai di kolom galat adalah
+ * "[object Object]".
+ */
+
+function withFetch(status: number, body: unknown) {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    json: () => Promise.resolve(body),
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
+afterEach(() => vi.unstubAllGlobals());
+
+const client = () => createApiClient({ baseUrl: 'https://contoh.test/api/v1' });
+
+describe('pesan galat', () => {
+  it('memakai `message` berupa string', async () => {
+    withFetch(400, { message: 'Stok tidak mencukupi' });
+    await expect(client().me()).rejects.toThrow('Stok tidak mencukupi');
+  });
+
+  it('menggabungkan `message` berupa array dari ValidationPipe', async () => {
+    withFetch(400, { message: ['email harus diisi', 'password terlalu pendek'] });
+    await expect(client().me()).rejects.toThrow(
+      'email harus diisi, password terlalu pendek',
+    );
+  });
+
+  it('tidak pernah menampilkan objek sebagai pesan', async () => {
+    withFetch(500, { message: { code: 'P2002', target: ['email'] } });
+    await expect(client().me()).rejects.toThrow('Request gagal (500)');
+  });
+
+  it('pesan kosong jatuh ke teks umum', async () => {
+    // Dialog galat tanpa kalimat sama saja dengan tidak memberi tahu
+    // apa yang gagal.
+    withFetch(503, { message: '   ' });
+    await expect(client().me()).rejects.toThrow('Request gagal (503)');
+  });
+
+  it('membawa status HTTP supaya pemanggil bisa membedakannya', async () => {
+    withFetch(403, { message: 'Terlarang' });
+    await expect(client().me()).rejects.toBeInstanceOf(ApiError);
+    await client()
+      .me()
+      .catch((e: ApiError) => expect(e.status).toBe(403));
+  });
+});
+
+describe('aiChat', () => {
+  it('membaca `response` dari envelope backend', async () => {
+    withFetch(200, { success: true, data: 'halo', response: 'halo' });
+    await expect(client().aiChat('hai')).resolves.toBe('halo');
+  });
+
+  it('jatuh ke `data` bila `response` tidak ada', async () => {
+    withFetch(200, { success: true, data: 'jawaban' });
+    await expect(client().aiChat('hai')).resolves.toBe('jawaban');
+  });
+
+  it('mengembalikan string kosong bila jawabannya bukan teks', async () => {
+    // Halaman memperlakukan string kosong sebagai "AI tidak menjawab" dan
+    // menampilkan pesan yang bisa dibaca — bukan merender objek.
+    withFetch(200, { success: true, data: { unexpected: true } });
+    await expect(client().aiChat('hai')).resolves.toBe('');
+  });
+
+  it('mengirim pesan sebagai JSON ke /ai/chat', async () => {
+    const fetchMock = withFetch(200, { response: 'oke' });
+    await client().aiChat('produk termurah');
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://contoh.test/api/v1/ai/chat');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({ message: 'produk termurah' });
+  });
+});

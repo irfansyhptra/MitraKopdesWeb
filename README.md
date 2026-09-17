@@ -30,7 +30,9 @@ npm run dev:landing    # landing promo  → http://localhost:3100
 
 npm run build          # build kedua app
 npm run typecheck      # tsc --noEmit di kedua app
-npm run lint           # eslint di app, landing, dan shared
+npm run lint           # eslint di app, landing, shared, dan test
+npm test               # vitest (jsdom + Testing Library)
+npm run test:watch     # vitest mode tonton
 ```
 
 > Next 16 memakai Turbopack sebagai bundler bawaan dan `next lint` sudah
@@ -43,6 +45,20 @@ npm run lint           # eslint di app, landing, dan shared
 > klien di sini memuat datanya sendiri di `useEffect`, dan memindahkannya ke
 > server component atau Suspense adalah keputusan arsitektur tersendiri,
 > bukan perbaikan lint.
+
+### Tes
+
+Satu `vitest.config.mts` di akar workspace, berkas tes di `test/`. Yang diuji
+adalah bagian yang diam-diam salah kalau rusak, bukan setiap komponen:
+
+| Berkas | Menjaga |
+|---|---|
+| `test/format.test.ts` | Jalur uang — `Decimal` string dari backend, pemisah ribuan, diskon yang tidak boleh melebihi nilai barang |
+| `test/api-client.test.ts` | Bentuk pesan galat Nest (string / array / objek) dan envelope `/ai/chat` |
+| `test/ai-assistant.test.tsx` | Mesin efek ketik: jawaban berpindah ke daftar pesan setelah selesai ditulis, dan kirim terkunci selama itu |
+
+Tes tidak ikut `tsc`: vitest menjalankannya langsung, jadi impor yang salah
+gagal seketika saat tes dijalankan.
 
 Tautan CTA landing mengarah ke app via `NEXT_PUBLIC_APP_URL`
 (default `http://localhost:3000`).
