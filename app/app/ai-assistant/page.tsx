@@ -3,6 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { Card, SectionHeader } from '@shared/design/ui';
+import {
+  ChevronRight,
+  Flame,
+  Percent,
+  Package,
+  Salad,
+  Send,
+  Sparkles,
+  Store,
+  Tag,
+  TrendingUp,
+  Truck,
+  type LucideIcon,
+} from '@shared/design/icons';
 
 /**
  * Asisten AI pelanggan — padanan `AIAssistantScreen` pada aplikasi Flutter.
@@ -31,42 +45,53 @@ interface Message {
   error?: boolean;
 }
 
-const SUGGESTIONS = [
+const SUGGESTIONS: {
+  icon: LucideIcon;
+  tint: string;
+  color: string;
+  title: string;
+  desc: string;
+  query: string;
+}[] = [
   {
-    icon: '📈',
+    icon: TrendingUp,
     tint: '#fee2e2',
+    color: '#ef4444',
     title: 'Terlaris Desa',
     desc: 'Cari produk terlaris di pasar desa saat ini.',
     query: 'Rekomendasi produk terlaris minggu ini',
   },
   {
-    icon: '🏷️',
+    icon: Tag,
     tint: '#fef3c7',
+    color: '#f59e0b',
     title: 'Promo Spesial',
     desc: 'Daftar produk diskon & penawaran menarik.',
     query: 'Apa saja produk yang sedang promo?',
   },
   {
-    icon: '🥗',
+    icon: Salad,
     tint: '#d1fae5',
+    color: '#10b981',
     title: 'Rekomendasi Belanja',
     desc: 'Rekomendasi belanja sehat untuk keluarga.',
     query: 'Rekomendasi belanja sehat',
   },
   {
-    icon: '🚚',
+    icon: Truck,
     tint: '#dbeafe',
+    color: '#3b82f6',
     title: 'Status Pesanan',
     desc: 'Lacak posisi pengiriman barang aktif.',
     query: 'Cek status pesanan saya',
   },
 ];
 
-const PILLS = [
-  { icon: '🔥', label: 'Produk terlaris minggu ini' },
-  { icon: '％', label: 'Promo diskon terbaru' },
-  { icon: '📦', label: 'Status pesanan saya' },
-  { icon: '🏪', label: 'Cara jadi mitra UMKM' },
+const PILLS: { icon: LucideIcon; color: string; label: string }[] = [
+  { icon: Flame, color: '#ef4444', label: 'Produk terlaris minggu ini' },
+  { icon: Percent, color: '#f59e0b', label: 'Promo diskon terbaru' },
+  { icon: Package, color: '#3b82f6', label: 'Status pesanan saya' },
+  { icon: Store, color: '#7442c8', label: 'Cara jadi mitra UMKM' },
 ];
 
 /** Kalimat yang berganti selama menunggu, sama dengan versi mobile. */
@@ -194,7 +219,7 @@ export default function AIAssistantPage() {
           {waiting && (
             <div className="kc-msg kc-msg--ai">
               <span className="kc-msg__avatar" aria-hidden="true">
-                ✦
+                <Sparkles size={14} />
               </span>
               <div className="kc-msg__bubble">
                 <span className="kc-typing" aria-hidden="true">
@@ -240,7 +265,7 @@ export default function AIAssistantPage() {
             disabled={busy || draft.trim().length === 0}
             aria-label="Kirim pesan"
           >
-            <span aria-hidden="true">➤</span>
+            <Send size={17} aria-hidden="true" />
           </button>
         </form>
       </div>
@@ -267,7 +292,7 @@ function Bubble({
     <div className={classes}>
       {message.role === 'ai' && (
         <span className="kc-msg__avatar" aria-hidden="true">
-          ✦
+          <Sparkles size={14} />
         </span>
       )}
       <div className="kc-msg__bubble">
@@ -284,7 +309,7 @@ function EmptyState({ onPick }: { onPick: (query: string) => void }) {
       <Card className="stack-sm">
         <div style={{ display: 'flex', gap: 'var(--sp-md)', alignItems: 'center' }}>
           <span className="kc-msg__avatar" aria-hidden="true">
-            ✦
+            <Sparkles size={14} />
           </span>
           <div>
             <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>
@@ -304,10 +329,13 @@ function EmptyState({ onPick }: { onPick: (query: string) => void }) {
             <button key={s.title} type="button" onClick={() => onPick(s.query)}>
               <span
                 className="kc-suggest__icon"
-                style={{ ['--suggest-tint' as string]: s.tint }}
+                style={{
+                  ['--suggest-tint' as string]: s.tint,
+                  color: s.color,
+                }}
                 aria-hidden="true"
               >
-                {s.icon}
+                <s.icon size={16} strokeWidth={2.2} />
               </span>
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span className="kc-suggest__title">{s.title}</span>
@@ -315,9 +343,11 @@ function EmptyState({ onPick }: { onPick: (query: string) => void }) {
                   {s.desc}
                 </span>
               </span>
-              <span aria-hidden="true" style={{ color: 'var(--primary)' }}>
-                ›
-              </span>
+              <ChevronRight
+                size={14}
+                aria-hidden="true"
+                style={{ color: 'var(--primary)', flex: 'none' }}
+              />
             </button>
           ))}
         </div>
@@ -331,7 +361,7 @@ function EmptyState({ onPick }: { onPick: (query: string) => void }) {
             className="kc-pill"
             onClick={() => onPick(p.label)}
           >
-            <span aria-hidden="true">{p.icon}</span>
+            <p.icon size={14} aria-hidden="true" style={{ color: p.color }} />
             {p.label}
           </button>
         ))}

@@ -130,7 +130,13 @@ body {
   background: var(--canvas);
 }
 .card .ic {
-  font-size: 28px;
+  /* Kotak berwarna dengan ikon putih — sama dengan tile kategori di app. */
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: #fff;
   margin-bottom: 12px;
 }
 .card h3 {

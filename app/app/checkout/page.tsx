@@ -12,6 +12,7 @@ import {
   SectionHeader,
   Skeleton,
 } from '@shared/design/ui';
+import { Package } from '@shared/design/icons';
 import { formatRupiah, shippingLabel, toRupiah } from '@shared/format';
 import type { Address, Cart, PaymentMethod } from '@shared/api';
 
@@ -245,7 +246,7 @@ function CheckoutForm() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={url} alt={source?.name ?? 'Produk'} />
                     ) : (
-                      <span aria-hidden="true">📦</span>
+                      <Package size={24} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
                     )}
                   </div>
                   <div className="cartrow__body">

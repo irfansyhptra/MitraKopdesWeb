@@ -9,9 +9,18 @@ import {
   Chip,
   Message,
   ProductGridSkeleton,
-  SectionHeader,
   SellerBadge,
 } from '@shared/design/ui';
+import {
+  categoryIcon,
+  Package,
+  Search,
+  ShoppingBasket,
+  Star,
+  tintAt,
+  Utensils,
+  type LucideIcon,
+} from '@shared/design/icons';
 import { formatRupiah, toRupiah } from '@shared/format';
 import type {
   Category,
@@ -47,29 +56,6 @@ const SORTS: { id: MarketplaceSort; label: string }[] = [
 ];
 
 const PAGE_SIZE = 20;
-
-/** Ikon tile kategori; nama datang dari backend jadi pencocokannya longgar. */
-const CATEGORY_ICONS: [RegExp, string][] = [
-  [/sembako|beras|bahan/i, '🍚'],
-  [/minum|kopi|teh/i, '🥤'],
-  [/instan|mie|makan/i, '🍜'],
-  [/rawat|mandi|bersih/i, '🧼'],
-  [/kosmetik|cantik/i, '💄'],
-  [/sayur|buah|segar/i, '🥬'],
-];
-
-const TILE_TINTS = [
-  '#ffebee',
-  '#e7f6ec',
-  '#fff6e0',
-  '#f0e8ff',
-  '#e3f0ff',
-  '#fdeaf4',
-];
-
-function iconFor(name: string): string {
-  return CATEGORY_ICONS.find(([re]) => re.test(name))?.[1] ?? '🛍️';
-}
 
 export default function MarketplacePage() {
   // `useSearchParams` menuntut Suspense saat prerender; beranda menautkan
@@ -188,7 +174,7 @@ function MarketplaceBrowser() {
 
       <div className="filterbar">
         <div className="searchbox">
-          <span aria-hidden="true">🔍</span>
+          <Search size={17} aria-hidden="true" />
           <input
             type="search"
             value={searchInput}
@@ -225,7 +211,7 @@ function MarketplaceBrowser() {
 
       <CategoryRow
         title="Filter Makanan"
-        icon="🍽️"
+        icon={Utensils}
         categories={categories.filter((c) => c.group === 'FOOD')}
         selectedId={filter.categoryId ?? null}
         onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id }))}
@@ -233,7 +219,7 @@ function MarketplaceBrowser() {
 
       <CategoryRow
         title="Filter Barang Ritel"
-        icon="🧺"
+        icon={ShoppingBasket}
         categories={categories.filter((c) => c.group === 'RETAIL')}
         selectedId={filter.categoryId ?? null}
         onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id }))}
@@ -291,13 +277,13 @@ function MarketplaceBrowser() {
  */
 function CategoryRow({
   title,
-  icon,
+  icon: TitleIcon,
   categories,
   selectedId,
   onSelect,
 }: {
   title: string;
-  icon: string;
+  icon: LucideIcon;
   categories: Category[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
@@ -306,10 +292,19 @@ function CategoryRow({
 
   return (
     <section style={{ marginTop: 'var(--sp-lg)' }}>
-      <SectionHeader title={`${icon} ${title}`} />
+      <div className="kc-section-head">
+        <h2
+          className="kc-section-head__title"
+          style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-sm)' }}
+        >
+          <TitleIcon size={17} aria-hidden="true" style={{ color: 'var(--primary)' }} />
+          {title}
+        </h2>
+      </div>
       <div className="kc-rail">
         {categories.map((cat, i) => {
           const active = selectedId === cat.id;
+          const Icon = categoryIcon(cat.name);
           return (
             <button
               key={cat.id}
@@ -320,12 +315,10 @@ function CategoryRow({
             >
               <span
                 className="kc-tile__icon"
-                style={{
-                  ['--tile-tint' as string]: TILE_TINTS[i % TILE_TINTS.length],
-                }}
+                style={{ ['--tile-tint' as string]: tintAt(i) }}
                 aria-hidden="true"
               >
-                {iconFor(cat.name)}
+                <Icon size={22} strokeWidth={2.1} />
               </span>
               <span className="kc-tile__label">{cat.name}</span>
             </button>
@@ -354,7 +347,7 @@ function ProductCard({ product }: { product: MarketplaceProduct }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.imageUrl} alt={product.name} loading="lazy" />
         ) : (
-          <span aria-hidden="true">📦</span>
+          <Package size={30} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
         )}
       </div>
       <div className="kc-product__body">
@@ -370,7 +363,12 @@ function ProductCard({ product }: { product: MarketplaceProduct }) {
         <p className="kc-product__seller">{product.sellerName}</p>
         {product.rating != null && product.rating > 0 && (
           <p className="kc-product__seller">
-            ★ {product.rating.toFixed(1)}
+            <Star
+              size={12}
+              aria-hidden="true"
+              style={{ color: 'var(--yellow-accent)', fill: 'currentColor' }}
+            />{' '}
+            {product.rating.toFixed(1)}
             {product.reviewCount ? ` (${product.reviewCount})` : ''}
           </p>
         )}

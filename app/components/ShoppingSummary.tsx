@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Card, MoneyLine } from '@shared/design/ui';
+import { ChevronDown } from '@shared/design/icons';
 import { formatRupiah, shippingLabel } from '@shared/format';
 
 /**
@@ -67,7 +68,14 @@ export function ShoppingSummary({
         >
           Ringkasan Belanja
         </span>
-        <span aria-hidden="true">{expanded ? '⌄' : '⌃'}</span>
+        <ChevronDown
+          size={16}
+          aria-hidden="true"
+          style={{
+            transform: expanded ? 'rotate(180deg)' : undefined,
+            transition: 'transform var(--t-fast) var(--ease)',
+          }}
+        />
       </button>
 
       {expanded && (

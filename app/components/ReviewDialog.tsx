@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { Button, Chip } from '@shared/design/ui';
+import { Star } from '@shared/design/icons';
 import type { ReviewableItem } from '@shared/api';
 
 /**
@@ -136,15 +137,19 @@ export function ReviewDialog({
                 style={{
                   width: 44,
                   height: 44,
-                  fontSize: 26,
-                  lineHeight: 1,
+                  display: 'grid',
+                  placeItems: 'center',
                   color:
                     star <= rating
                       ? 'var(--yellow-accent)'
                       : 'var(--hairline)',
                 }}
               >
-                ★
+                <Star
+                  size={26}
+                  aria-hidden="true"
+                  style={{ fill: 'currentColor' }}
+                />
               </button>
             ))}
           </div>

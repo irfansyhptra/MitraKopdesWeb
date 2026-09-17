@@ -46,6 +46,24 @@ npm run test:watch     # vitest mode tonton
 > server component atau Suspense adalah keputusan arsitektur tersendiri,
 > bukan perbaikan lint.
 
+### Ikon
+
+Semua ikon berasal dari `shared/design/icons.tsx`, satu pintu ke
+[`lucide-react`](https://lucide.dev). Sebelumnya ikon ditulis sebagai karakter
+Unicode (`⌂`, `◍`, `✦`, `➤`) — bentuk seperti itu bergantung pada font yang
+kebetulan terpasang di mesin pembaca dan muncul sebagai kotak kosong di banyak
+Linux dan Windows. SVG ikut dikirim bersama halaman, jadi bentuknya sama di
+mana pun.
+
+Ikon mewarisi `currentColor`, jadi warnanya diatur dari tempat pemakaian —
+sama seperti `Icon(..., color: ...)` di Flutter. Palet tile kategori
+(`TILE_TINTS`) adalah salinan `AppleTints.palette` di `apple_ui.dart`.
+
+Menambah ikon: tambahkan namanya pada daftar re-export di
+`shared/design/icons.tsx`, jangan impor langsung dari `lucide-react` di
+halaman — satu daftar itu yang membuat ikon di web tetap sepadan dengan
+ikon di mobile.
+
 ### Tes
 
 Satu `vitest.config.mts` di akar workspace, berkas tes di `test/`. Yang diuji
@@ -56,6 +74,7 @@ adalah bagian yang diam-diam salah kalau rusak, bukan setiap komponen:
 | `test/format.test.ts` | Jalur uang — `Decimal` string dari backend, pemisah ribuan, diskon yang tidak boleh melebihi nilai barang |
 | `test/api-client.test.ts` | Bentuk pesan galat Nest (string / array / objek) dan envelope `/ai/chat` |
 | `test/ai-assistant.test.tsx` | Mesin efek ketik: jawaban berpindah ke daftar pesan setelah selesai ditulis, dan kirim terkunci selama itu |
+| `test/icons.test.ts` | Pemetaan ikon kategori selalu menghasilkan ikon, termasuk untuk kategori baru dari backend |
 
 Tes tidak ikut `tsc`: vitest menjalankannya langsung, jadi impor yang salah
 gagal seketika saat tes dijalankan.

@@ -3,6 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import {
+  ClipboardList,
+  House,
+  ShoppingCart,
+  Sparkles,
+  Store,
+  UserIcon,
+  type LucideIcon,
+} from '@shared/design/icons';
 
 /**
  * Kerangka navigasi pelanggan — padanan `AppShell` + `CustomBottomNavBar`
@@ -16,7 +25,7 @@ import type { ReactNode } from 'react';
 interface NavItem {
   href: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   accent?: boolean;
 }
 
@@ -26,11 +35,11 @@ interface NavItem {
  * seperti `isAccent` pada item yang sama di Dart.
  */
 const NAV: NavItem[] = [
-  { href: '/', label: 'Beranda', icon: '⌂' },
-  { href: '/marketplace', label: 'Marketplace', icon: '◍' },
-  { href: '/ai-assistant', label: 'Asisten', icon: '✦', accent: true },
-  { href: '/orders', label: 'Pesanan', icon: '☰' },
-  { href: '/profile', label: 'Profil', icon: '☻' },
+  { href: '/', label: 'Beranda', icon: House },
+  { href: '/marketplace', label: 'Marketplace', icon: Store },
+  { href: '/ai-assistant', label: 'Asisten', icon: Sparkles, accent: true },
+  { href: '/orders', label: 'Pesanan', icon: ClipboardList },
+  { href: '/profile', label: 'Profil', icon: UserIcon },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -77,7 +86,7 @@ export function AppShell({
                   : 'Keranjang'
               }
             >
-              🛒
+              <ShoppingCart size={18} aria-hidden="true" />
               {/* Nol berarti lencana tidak digambar, bukan bulatan berisi "0". */}
               {cartCount > 0 && (
                 <span className="icon-btn__badge">
@@ -103,7 +112,7 @@ export function AppShell({
             data-accent={item.accent ? 'true' : undefined}
           >
             <span className="bottomnav__icon" aria-hidden="true">
-              {item.icon}
+              <item.icon size={20} strokeWidth={2.2} />
             </span>
             {item.label}
           </Link>

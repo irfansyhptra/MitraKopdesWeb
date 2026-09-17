@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { getToken } from '@/lib/auth';
 import { SegmentedTabs, type TabItem } from '@shared/design/ui';
+import { ShieldCheck } from '@shared/design/icons';
 import {
   CartTab,
   ConfirmRemove,
@@ -273,9 +274,11 @@ export default function OrdersPage() {
       </div>
 
       <button type="button" className="kc-trust" style={{ marginBottom: 'var(--sp-base)' }}>
-        <span aria-hidden="true" style={{ fontSize: 18 }}>
-          🛡
-        </span>
+        <ShieldCheck
+          size={18}
+          aria-hidden="true"
+          style={{ color: 'var(--success)' }}
+        />
         <span>
           <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: 'var(--ink)' }}>
             Belanja Aman di KMP Mitra

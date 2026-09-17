@@ -11,6 +11,7 @@ import {
   Skeleton,
   type SellerKind,
 } from '@shared/design/ui';
+import { BadgeCheck, Package, Trash2 } from '@shared/design/icons';
 import { formatRupiah, toRupiah } from '@shared/format';
 import type { Cart, CartItem } from '@shared/api';
 
@@ -193,7 +194,9 @@ export function CartTab({
                 label={`Pilih semua produk dari ${group.name}`}
               />
               <SellerBadge kind={group.kind} />
-              <Badge variant="success">✓ Terverifikasi</Badge>
+              <Badge variant="success">
+                <BadgeCheck size={11} aria-hidden="true" /> Terverifikasi
+              </Badge>
               <span className="sellergroup__name">{group.name}</span>
               <button
                 type="button"
@@ -254,7 +257,7 @@ function CartRow({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={image} alt={name} loading="lazy" />
         ) : (
-          <span aria-hidden="true">📦</span>
+          <Package size={24} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
         )}
       </div>
 
@@ -286,7 +289,7 @@ function CartRow({
         // untuk pembaca layar pada daftar berisi banyak baris.
         aria-label={`Hapus ${name} dari keranjang`}
       >
-        🗑
+        <Trash2 size={16} aria-hidden="true" />
       </button>
     </div>
   );

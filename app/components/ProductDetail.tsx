@@ -15,6 +15,7 @@ import {
   Skeleton,
   type SellerKind,
 } from '@shared/design/ui';
+import { Package, Star } from '@shared/design/icons';
 import { formatDate, formatRupiah, toRupiah } from '@shared/format';
 import type { Review } from '@shared/api';
 
@@ -103,9 +104,11 @@ export function ProductDetail({
                 }}
               />
             ) : (
-              <span aria-hidden="true" style={{ fontSize: 40 }}>
-                📦
-              </span>
+              <Package
+                size={40}
+                aria-hidden="true"
+                style={{ color: 'var(--muted-soft)' }}
+              />
             )}
           </div>
 
@@ -269,6 +272,28 @@ export function ProductDetail({
 }
 
 /** Daftar ulasan produk. */
+/** Lima bintang; yang terisi sebanyak nilainya. */
+function Stars({ value }: { value: number }) {
+  return (
+    <span
+      style={{ display: 'inline-flex', gap: 1 }}
+      aria-label={`${value} dari 5 bintang`}
+    >
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          size={13}
+          aria-hidden="true"
+          style={{
+            color: n <= value ? 'var(--yellow-accent)' : 'var(--hairline)',
+            fill: 'currentColor',
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
 function ReviewList({
   reviewRef,
 }: {
@@ -308,7 +333,7 @@ function ReviewList({
       <SectionHeader
         title={
           // Rata-rata null berarti belum ada ulasan — bukan nol bintang.
-          average != null ? `Ulasan ★ ${average} (${total})` : 'Ulasan'
+          average != null ? `Ulasan · ${average} dari 5 (${total})` : 'Ulasan'
         }
       />
 
@@ -341,12 +366,7 @@ function ReviewList({
               <strong style={{ fontSize: 13.5, color: 'var(--ink)' }}>
                 {review.user?.name ?? 'Pembeli'}
               </strong>
-              <span style={{ color: 'var(--yellow-accent)' }}>
-                {'★'.repeat(review.rating)}
-                <span style={{ color: 'var(--hairline)' }}>
-                  {'★'.repeat(5 - review.rating)}
-                </span>
-              </span>
+              <Stars value={review.rating} />
               <span className="t-caption-sm" style={{ marginLeft: 'auto' }}>
                 {formatDate(review.createdAt)}
               </span>

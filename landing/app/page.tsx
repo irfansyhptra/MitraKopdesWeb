@@ -1,34 +1,50 @@
 // Landing promosi KOPDES (SSG). Konten dari fitur utama produk.
+import {
+  Bot,
+  Handshake,
+  PackageOpen,
+  Store,
+  Truck,
+  Vote,
+  type LucideIcon,
+} from 'lucide-react';
+
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
-const features = [
+const features: { ic: LucideIcon; tint: string; title: string; desc: string }[] = [
   {
-    ic: '🏪',
+    ic: Store,
+    tint: '#b4693c',
     title: 'Marketplace UMKM Lokal',
     desc: 'Produk koperasi & UMKM desa dalam satu katalog, dengan pencarian semantik toleran typo.',
   },
   {
-    ic: '🤝',
+    ic: Handshake,
+    tint: '#3a7ca5',
     title: 'Kemitraan Terverifikasi',
     desc: 'UMKM mendaftar sebagai mitra koperasi desanya; admin memverifikasi sebelum tayang.',
   },
   {
-    ic: '🚚',
+    ic: Truck,
+    tint: '#c08a2e',
     title: 'Logistik Dua Validasi',
     desc: 'Ambil di tempat atau diantar kurir, dengan bukti GPS kurir dan pelanggan.',
   },
   {
-    ic: '🤖',
+    ic: Bot,
+    tint: '#7a5ea8',
     title: 'Asisten & Analitik AI',
     desc: 'Rekomendasi restock, demand forecasting, dan deteksi anomali stok berbasis AI.',
   },
   {
-    ic: '📦',
+    ic: PackageOpen,
+    tint: '#b05070',
     title: 'Manajemen Inventaris',
     desc: 'Pencatatan stok real-time menggantikan pembukuan manual koperasi.',
   },
   {
-    ic: '🗳️',
+    ic: Vote,
+    tint: '#3f8a6e',
     title: 'Usulan Komunitas',
     desc: 'Warga mengusulkan produk baru dan mendukung lewat voting sebagai acuan pengadaan.',
   },
@@ -71,7 +87,9 @@ export default function Home() {
           <div className="grid">
             {features.map((f) => (
               <div className="card" key={f.title}>
-                <div className="ic">{f.ic}</div>
+                <div className="ic" style={{ background: f.tint }}>
+                  <f.ic size={22} aria-hidden="true" />
+                </div>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
               </div>

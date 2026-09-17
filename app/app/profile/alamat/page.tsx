@@ -13,6 +13,7 @@ import {
   SectionHeader,
   Skeleton,
 } from '@shared/design/ui';
+import { Trash2 } from '@shared/design/icons';
 import type { Address, CreateAddressInput } from '@shared/api';
 
 /** Kelola alamat pengiriman — dipakai checkout untuk memilih tujuan. */
@@ -146,7 +147,7 @@ export default function AddressPage() {
                   onClick={() => void remove(address)}
                   aria-label={`Hapus alamat ${address.title}`}
                 >
-                  🗑
+                  <Trash2 size={16} aria-hidden="true" />
                 </button>
               </div>
             ))}

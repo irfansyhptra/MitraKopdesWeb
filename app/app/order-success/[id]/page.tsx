@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Card, SectionHeader } from '@shared/design/ui';
+import { Check } from '@shared/design/icons';
 
 /**
  * Konfirmasi pesanan dibuat — padanan `OrderSuccessScreen`.
@@ -27,12 +28,11 @@ export default function OrderSuccessPage() {
               borderRadius: '50%',
               display: 'grid',
               placeItems: 'center',
-              fontSize: 30,
               background: 'var(--kopdes-surface)',
               color: 'var(--kopdes-text)',
             }}
           >
-            ✓
+            <Check size={30} strokeWidth={3} aria-hidden="true" />
           </div>
           <h1 className="t-title-lg" style={{ fontWeight: 700 }}>
             Pesanan Berhasil Dibuat

@@ -551,6 +551,9 @@
 }
 
 .kc-hero__place {
+  display: flex;
+  align-items: center;
+  gap: 3px;
   font-size: 11px;
   color: #ffd5da;
   line-height: 1.2;
@@ -588,9 +591,9 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
+.kc-iconbtn > svg,
 .kc-iconbtn > span {
   position: relative;
-  font-size: 17px;
   line-height: 1;
 }
 
@@ -781,10 +784,13 @@
   height: 48px;
   display: grid;
   place-items: center;
-  font-size: 22px;
   /* Squircle iOS didekati dengan radius besar; CSS belum punya superellipse. */
   border-radius: 30%;
-  background: var(--tile-tint, var(--primary-tint));
+  /* Isian warna penuh dengan ikon putih — sama dengan `AppleMenuTile`
+     ketika diberi tint, bukan latar pucat dengan ikon berwarna. */
+  background: var(--tile-tint, var(--primary));
+  color: var(--on-primary);
+  box-shadow: var(--sh-soft);
   transition: transform var(--t-fast) var(--ease);
 }
 
@@ -1254,4 +1260,35 @@
   font-size: 12px;
   color: rgba(255, 255, 255, 0.75);
   margin-top: var(--sp-xs);
+}
+
+
+/* ── Ikon ────────────────────────────────────────────────────────────────
+   Semua ikon adalah SVG dari `shared/design/icons.tsx`. Ia mewarisi warna
+   teks di sekitarnya, dan tidak pernah menyusut saat ruang menyempit —
+   ikon yang gepeng lebih buruk daripada label yang terpotong. */
+svg.lucide {
+  flex: none;
+  vertical-align: -0.15em;
+}
+
+/* Baris teks yang diawali ikon dirapikan sebagai flex supaya ikonnya sejajar
+   tengah huruf, bukan menggantung di garis dasar. */
+.t-caption-sm:has(> svg.lucide),
+.kc-product__seller:has(> svg.lucide),
+.kc-summary__label,
+.kc-badge:has(> svg.lucide),
+.kc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kc-quick a,
+.kc-quick button,
+.kc-shortcut a,
+.kc-shortcut button,
+.bottomnav a {
+  /* Kolom ikon-di-atas-label: ikonnya tidak boleh ikut melar. */
+  line-height: 1.2;
 }

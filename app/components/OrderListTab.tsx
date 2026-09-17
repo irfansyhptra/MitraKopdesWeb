@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Badge, Chip, ListGroup, Message, Skeleton } from '@shared/design/ui';
+import { Package } from '@shared/design/icons';
 import {
   formatDate,
   formatRupiah,
@@ -173,7 +174,7 @@ function OrderCard({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={url} alt={source?.name ?? 'Produk'} loading="lazy" />
               ) : (
-                <span aria-hidden="true">📦</span>
+                <Package size={24} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
               )}
             </div>
           );

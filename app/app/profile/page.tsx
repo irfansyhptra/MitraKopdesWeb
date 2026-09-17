@@ -15,6 +15,21 @@ import {
   Skeleton,
 } from '@shared/design/ui';
 import type { User } from '@shared/api';
+import {
+  Building2,
+  ChevronRight,
+  CircleCheckBig,
+  Mail,
+  MapPin,
+  Phone,
+  ReceiptText,
+  ShoppingCart,
+  Sparkles,
+  Star,
+  Store,
+  Wallet,
+  type LucideIcon,
+} from '@shared/design/icons';
 
 /**
  * Profil — padanan `ProfileScreen` pada aplikasi Flutter: header merah
@@ -194,7 +209,7 @@ export default function ProfilePage() {
                 cartCount ? `Keranjang, ${cartCount} produk` : 'Keranjang'
               }
             >
-              <span aria-hidden="true">🛒</span>
+              <ShoppingCart size={19} aria-hidden="true" />
               {!!cartCount && (
                 <span className="kc-iconbtn__badge">
                   {cartCount > 99 ? '99+' : cartCount}
@@ -231,16 +246,26 @@ export default function ProfilePage() {
               <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)' }}>
                 {user.name}
               </p>
-              <p className="t-caption-sm">✉ {user.email}</p>
-              {user.phone && <p className="t-caption-sm">☎ {user.phone}</p>}
+              <p className="t-caption-sm">
+                <Mail size={13} aria-hidden="true" /> {user.email}
+              </p>
+              {user.phone && (
+                <p className="t-caption-sm">
+                  <Phone size={13} aria-hidden="true" /> {user.phone}
+                </p>
+              )}
               {user.kopdes?.name && (
-                <p className="t-caption-sm">📍 {user.kopdes.name}</p>
+                <p className="t-caption-sm">
+                  <MapPin size={13} aria-hidden="true" /> {user.kopdes.name}
+                </p>
               )}
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: 'var(--sp-sm)', flexWrap: 'wrap' }}>
-            <Badge variant="success">★ Anggota Aktif</Badge>
+            <Badge variant="success">
+              <Star size={11} aria-hidden="true" /> Anggota Aktif
+            </Badge>
             <Badge variant="primary">{roleLabel(user.role)}</Badge>
             {addressCount != null && (
               <Badge variant="muted">{addressCount} alamat tersimpan</Badge>
@@ -251,20 +276,35 @@ export default function ProfilePage() {
 
       <div className="kc-rail">
         <Stat
-          icon="🏛️"
+          icon={Building2}
           tint="#ffebee"
+          color="var(--primary)"
           label="Koperasi"
           value={user.kopdes?.name ?? 'Belum terdaftar'}
         />
         {/* Dua kartu berikutnya menunggu endpoint-nya; lihat catatan di atas. */}
-        <Stat icon="👛" tint="#ffebee" label="Saldo Belanja" value="—" muted />
-        <Stat icon="★" tint="#fff6e0" label="Poin Koperasi" value="—" muted />
         <Stat
-          icon="✅"
+          icon={Wallet}
+          tint="#ffebee"
+          color="var(--primary)"
+          label="Saldo Belanja"
+          value="—"
+          muted
+        />
+        <Stat
+          icon={Star}
+          tint="#fff6e0"
+          color="var(--warning)"
+          label="Poin Koperasi"
+          value="—"
+          muted
+        />
+        <Stat
+          icon={CircleCheckBig}
           tint="#e7f6ec"
+          color="var(--success)"
           label="Status"
           value="Aktif"
-          color="var(--success)"
         />
       </div>
 
@@ -272,25 +312,25 @@ export default function ProfilePage() {
         <nav className="kc-shortcut" aria-label="Pintasan">
           <Link href="/orders">
             <span className="kc-shortcut__icon" aria-hidden="true">
-              🧾
+              <ReceiptText size={18} />
             </span>
             Pesanan Saya
           </Link>
           <Link href="/orders">
             <span className="kc-shortcut__icon" aria-hidden="true">
-              🛒
+              <ShoppingCart size={18} />
             </span>
             Keranjang
           </Link>
           <Link href="/marketplace">
             <span className="kc-shortcut__icon" aria-hidden="true">
-              🏪
+              <Store size={18} />
             </span>
             Belanja
           </Link>
           <Link href="/ai-assistant">
             <span className="kc-shortcut__icon" aria-hidden="true">
-              ✦
+              <Sparkles size={18} />
             </span>
             Asisten
           </Link>
@@ -327,14 +367,14 @@ export default function ProfilePage() {
 }
 
 function Stat({
-  icon,
+  icon: Icon,
   tint,
   label,
   value,
   color,
   muted = false,
 }: {
-  icon: string;
+  icon: LucideIcon;
   tint: string;
   label: string;
   value: string;
@@ -343,8 +383,8 @@ function Stat({
 }) {
   return (
     <div className="kc-stat" style={{ ['--stat-tint' as string]: tint }}>
-      <span className="kc-stat__icon" aria-hidden="true">
-        {icon}
+      <span className="kc-stat__icon" aria-hidden="true" style={{ color }}>
+        <Icon size={13} strokeWidth={2.4} />
       </span>
       <div>
         <p className="kc-stat__label">{label}</p>
@@ -382,9 +422,11 @@ function MenuRow({ item }: { item: MenuItem }) {
       {item.pending ? (
         <Badge variant="muted">Segera</Badge>
       ) : (
-        <span aria-hidden="true" style={{ color: 'var(--muted-soft)' }}>
-          ›
-        </span>
+        <ChevronRight
+          size={16}
+          aria-hidden="true"
+          style={{ color: 'var(--muted-soft)', flex: 'none' }}
+        />
       )}
     </span>
   );

@@ -2,6 +2,13 @@ import Link from 'next/link';
 import { publicApi } from '@/lib/api';
 import { HomeHero } from '@/components/HomeHero';
 import { Card, Message, SectionHeader } from '@shared/design/ui';
+import {
+  categoryIcon,
+  Handshake,
+  Package,
+  Store,
+  tintAt,
+} from '@shared/design/icons';
 import { formatRupiah, toRupiah } from '@shared/format';
 import type { Category, MarketplaceProduct } from '@shared/api';
 
@@ -19,31 +26,6 @@ import type { Category, MarketplaceProduct } from '@shared/api';
  */
 
 export const revalidate = 60;
-
-/** Ikon kategori. Nama kategori datang dari backend, jadi pencocokannya
- *  longgar dan selalu punya jatuhnya. */
-const CATEGORY_ICONS: [RegExp, string][] = [
-  [/sembako|beras|bahan/i, '🍚'],
-  [/minum|kopi|teh/i, '🥤'],
-  [/instan|mie|makan/i, '🍜'],
-  [/rawat|mandi|bersih/i, '🧼'],
-  [/kosmetik|cantik/i, '💄'],
-  [/sayur|buah|segar/i, '🥬'],
-];
-
-function iconFor(name: string): string {
-  return CATEGORY_ICONS.find(([re]) => re.test(name))?.[1] ?? '🛍️';
-}
-
-/** Warna tile kategori — deret yang sama dengan `AppleTints.at(index)`. */
-const TILE_TINTS = [
-  '#ffebee',
-  '#e7f6ec',
-  '#fff6e0',
-  '#f0e8ff',
-  '#e3f0ff',
-  '#fdeaf4',
-];
 
 async function safe<T>(work: Promise<T>, fallback: T): Promise<T> {
   try {
@@ -94,22 +76,25 @@ export default async function HomePage() {
             href="/marketplace"
           />
           <div className="kc-rail">
-            {categories.map((cat, i) => (
-              <Link
-                key={cat.id}
-                href={`/marketplace?categoryId=${cat.id}`}
-                className="kc-tile"
-              >
-                <span
-                  className="kc-tile__icon"
-                  style={{ ['--tile-tint' as string]: TILE_TINTS[i % TILE_TINTS.length] }}
-                  aria-hidden="true"
+            {categories.map((cat, i) => {
+              const Icon = categoryIcon(cat.name);
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/marketplace?categoryId=${cat.id}`}
+                  className="kc-tile"
                 >
-                  {iconFor(cat.name)}
-                </span>
-                <span className="kc-tile__label">{cat.name}</span>
-              </Link>
-            ))}
+                  <span
+                    className="kc-tile__icon"
+                    style={{ ['--tile-tint' as string]: tintAt(i) }}
+                    aria-hidden="true"
+                  >
+                    <Icon size={22} strokeWidth={2.1} />
+                  </span>
+                  <span className="kc-tile__label">{cat.name}</span>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
@@ -171,7 +156,7 @@ export default async function HomePage() {
       <Card pad={false}>
         <Link href="/marketplace" className="kc-banner">
           <span className="kc-banner__icon" aria-hidden="true">
-            🏪
+            <Store size={22} />
           </span>
           <span>
             <span className="kc-banner__title">Belanja di desa sendiri</span>
@@ -186,7 +171,7 @@ export default async function HomePage() {
       <Card pad={false}>
         <Link href="/profile" className="kc-banner kc-banner--soft">
           <span className="kc-banner__icon" aria-hidden="true">
-            🤝
+            <Handshake size={22} />
           </span>
           <span>
             <span className="kc-banner__title">Jadi mitra UMKM Kopdes</span>
@@ -221,7 +206,7 @@ function PromoTile({ product }: { product: MarketplaceProduct }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.imageUrl} alt={product.name} loading="lazy" />
         ) : (
-          <span aria-hidden="true">📦</span>
+          <Package size={30} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
         )}
         {off > 0 && <span className="kc-promo__badge">-{off}%</span>}
       </div>
@@ -254,7 +239,7 @@ function ProductCard({ product }: { product: MarketplaceProduct }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.imageUrl} alt={product.name} loading="lazy" />
         ) : (
-          <span aria-hidden="true">📦</span>
+          <Package size={30} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
         )}
       </div>
       <div className="kc-product__body">

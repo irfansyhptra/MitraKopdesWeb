@@ -6,7 +6,21 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { getToken } from '@/lib/auth';
 import { Card } from '@shared/design/ui';
+import {
+  BadgeCheck,
+  MapPin,
+  Plus,
+  ReceiptText,
+  Search,
+  ShoppingCart,
+  Sparkles,
+  Star,
+  UserIcon,
+  Wallet,
+  Award,
+} from '@shared/design/icons';
 import type { User } from '@shared/api';
+import type { LucideIcon } from '@shared/design/icons';
 
 /**
  * Header beranda + ringkasan keanggotaan — padanan `CompactHomeHeader` dan
@@ -67,20 +81,18 @@ export function HomeHero() {
               {/* Lencana ini menyampaikan status, bukan hiasan — jadi ia
                   punya teks untuk pembaca layar. */}
               {user && (
-                <span
-                  title="Akun terverifikasi"
-                  style={{ color: 'var(--yellow-accent)', fontSize: 14 }}
-                >
+                <span title="Akun terverifikasi" style={{ color: 'var(--yellow-accent)' }}>
                   <span className="visually-hidden">Akun terverifikasi</span>
-                  <span aria-hidden="true">✓</span>
+                  <BadgeCheck size={15} aria-hidden="true" />
                 </span>
               )}
             </p>
+            {/* Lokasi datang dari Kopdes tempat akun terdaftar. Tanpa itu
+                tidak ada desa yang bisa disebut — versi mobile menuliskan
+                "Desa Lamteh" tetap di dalam kode, dan itu tidak ditiru. */}
             <p className="kc-hero__place">
-              {/* Lokasi datang dari Kopdes tempat akun terdaftar. Tanpa itu
-                  tidak ada desa yang bisa disebut — versi mobile menuliskan
-                  "Desa Lamteh" tetap di dalam kode, dan itu tidak ditiru. */}
-              📍 {user?.kopdes?.name ?? 'Pilih koperasi desamu'}
+              <MapPin size={12} aria-hidden="true" />
+              {user?.kopdes?.name ?? 'Pilih koperasi desamu'}
             </p>
           </div>
 
@@ -92,7 +104,7 @@ export function HomeHero() {
                 cartCount > 0 ? `Keranjang, ${cartCount} produk` : 'Keranjang'
               }
             >
-              <span aria-hidden="true">🛒</span>
+              <ShoppingCart size={19} aria-hidden="true" />
               {cartCount > 0 && (
                 <span className="kc-iconbtn__badge">
                   {cartCount > 99 ? '99+' : cartCount}
@@ -104,14 +116,14 @@ export function HomeHero() {
               className="kc-iconbtn"
               aria-label="Asisten AI"
             >
-              <span aria-hidden="true">✦</span>
+              <Sparkles size={19} aria-hidden="true" />
             </Link>
           </div>
         </div>
 
         <form className="kc-hero__search" onSubmit={search} role="search">
           <label className="kc-hero__field">
-            <span aria-hidden="true">🔍</span>
+            <Search size={19} aria-hidden="true" />
             <span className="visually-hidden">Cari produk</span>
             <input
               type="search"
@@ -121,9 +133,7 @@ export function HomeHero() {
             />
           </label>
           <button type="submit" className="kc-hero__filter">
-            <span aria-hidden="true" style={{ color: 'var(--primary)' }}>
-              ⚙
-            </span>
+            <Search size={17} aria-hidden="true" style={{ color: 'var(--primary)' }} />
             Cari
           </button>
         </form>
@@ -131,13 +141,15 @@ export function HomeHero() {
 
       <Card className="stack-md">
         <div className="kc-summary">
-          <SummaryItem icon="👛" tint="var(--primary)" label="Saldo Anggota" />
-          <SummaryItem icon="★" tint="var(--warning)" label="Poin Belanja" />
+          <SummaryItem icon={Wallet} tint="var(--primary)" label="Saldo Anggota" />
+          <SummaryItem icon={Star} tint="var(--warning)" label="Poin Belanja" />
           <div className="kc-summary__item">
             <p className="kc-summary__label">
-              <span aria-hidden="true" style={{ color: 'var(--yellow-accent)' }}>
-                ◆
-              </span>
+              <Award
+                size={13}
+                aria-hidden="true"
+                style={{ color: 'var(--yellow-accent)' }}
+              />
               Status
             </p>
             <p className="kc-summary__value">
@@ -148,19 +160,19 @@ export function HomeHero() {
 
         <nav className="kc-quick" aria-label="Aksi cepat">
           <Link href="/marketplace">
-            <i aria-hidden="true">＋</i>
+            <Plus size={15} aria-hidden="true" />
             Belanja
           </Link>
           <Link href="/orders">
-            <i aria-hidden="true">🧾</i>
+            <ReceiptText size={15} aria-hidden="true" />
             Riwayat
           </Link>
           <Link href="/ai-assistant">
-            <i aria-hidden="true">✦</i>
+            <Sparkles size={15} aria-hidden="true" />
             Asisten
           </Link>
           <Link href="/profile">
-            <i aria-hidden="true">☻</i>
+            <UserIcon size={15} aria-hidden="true" />
             Detail
           </Link>
         </nav>
@@ -179,20 +191,18 @@ export function HomeHero() {
  * endpoint-nya dibuat.
  */
 function SummaryItem({
-  icon,
+  icon: Icon,
   tint,
   label,
 }: {
-  icon: string;
+  icon: LucideIcon;
   tint: string;
   label: string;
 }) {
   return (
     <div className="kc-summary__item">
       <p className="kc-summary__label">
-        <span aria-hidden="true" style={{ color: tint }}>
-          {icon}
-        </span>
+        <Icon size={13} aria-hidden="true" style={{ color: tint }} />
         {label}
       </p>
       <p className="kc-summary__value" style={{ color: 'var(--muted-soft)' }}>
