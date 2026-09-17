@@ -274,6 +274,10 @@ function ReviewList({
 }: {
   reviewRef: { productId?: string; umkmProductId?: string };
 }) {
+  // Dibaca per-field: objek `reviewRef` dibuat ulang tiap render induknya,
+  // jadi memakainya langsung sebagai dependensi berarti memuat ulang ulasan
+  // pada setiap render.
+  const { productId, umkmProductId } = reviewRef;
   const [reviews, setReviews] = useState<Review[]>([]);
   const [average, setAverage] = useState<number | null>(null);
   const [total, setTotal] = useState(0);
@@ -282,7 +286,7 @@ function ReviewList({
   useEffect(() => {
     let cancelled = false;
     api
-      .getReviews(reviewRef, 1, 5)
+      .getReviews({ productId, umkmProductId }, 1, 5)
       .then((res) => {
         if (cancelled) return;
         setReviews(res.items);
@@ -297,7 +301,7 @@ function ReviewList({
     return () => {
       cancelled = true;
     };
-  }, [reviewRef.productId, reviewRef.umkmProductId]);
+  }, [productId, umkmProductId]);
 
   return (
     <Card className="stack-md">

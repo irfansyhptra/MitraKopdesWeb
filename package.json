@@ -15,9 +15,17 @@
     "build:app": "npm run build --workspace=app",
     "build:landing": "npm run build --workspace=landing",
     "start": "npm run start --workspace=app",
-    "typecheck": "npm run typecheck --workspace=app && npm run typecheck --workspace=landing"
+    "typecheck": "npm run typecheck --workspace=app && npm run typecheck --workspace=landing",
+    "lint": "eslint app landing shared"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.3.5",
+    "eslint": "^10.10.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "typescript-eslint": "^8.70.0"
   }
 }

@@ -30,11 +30,19 @@ npm run dev:landing    # landing promo  → http://localhost:3100
 
 npm run build          # build kedua app
 npm run typecheck      # tsc --noEmit di kedua app
+npm run lint           # eslint di app, landing, dan shared
 ```
 
-> Next 16 memakai Turbopack sebagai bundler bawaan, dan `next lint` sudah
-> dihapus dari CLI-nya. Repo ini belum punya konfigurasi ESLint — `tsc` yang
-> menjadi penjaga tipe untuk saat ini.
+> Next 16 memakai Turbopack sebagai bundler bawaan dan `next lint` sudah
+> dihapus dari CLI-nya, jadi ESLint dipasang langsung: satu `eslint.config.mjs`
+> (flat config) di akar workspace untuk `app`, `landing`, dan `shared`.
+> `tsc` menjaga tipe, ESLint menjaga yang luput dari tipe — dependensi hook
+> yang kurang dan aturan khusus Next.
+>
+> Aturan `react-hooks/set-state-in-effect` dimatikan dengan sengaja: halaman
+> klien di sini memuat datanya sendiri di `useEffect`, dan memindahkannya ke
+> server component atau Suspense adalah keputusan arsitektur tersendiri,
+> bukan perbaikan lint.
 
 Tautan CTA landing mengarah ke app via `NEXT_PUBLIC_APP_URL`
 (default `http://localhost:3000`).

@@ -14,7 +14,7 @@ import {
   SectionHeader,
   Skeleton,
 } from '@shared/design/ui';
-import type { Address, User } from '@shared/api';
+import type { User } from '@shared/api';
 
 /**
  * Profil — padanan `ProfileScreen` pada aplikasi Flutter.

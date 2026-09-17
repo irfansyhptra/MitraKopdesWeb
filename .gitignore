@@ -15,3 +15,6 @@ npm-debug.log*
 
 # Misc
 .DS_Store
+
+# Cache inkremental TypeScript — hasil build, bukan sumber
+*.tsbuildinfo

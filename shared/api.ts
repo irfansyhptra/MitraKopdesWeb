@@ -10,7 +10,6 @@
 
 import type {
   Address,
-  ApiResponse,
   AuthResult,
   Cart,
   CreateAddressInput,
@@ -47,11 +46,14 @@ export class ApiError extends Error {
   }
 }
 
+/** Respons JSON backend apa adanya; bentuk tiap endpoint dibaca lewat `pick()`. */
+type JsonBody = Record<string, unknown> | null;
+
 export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
   async function rawRequest(
     path: string,
     init: RequestInit = {},
-  ): Promise<any> {
+  ): Promise<JsonBody> {
     const token = getToken?.();
     const res = await fetch(`${baseUrl}${path}`, {
       ...init,
@@ -61,17 +63,25 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
         ...(init.headers ?? {}),
       },
     });
-    const body = await res.json().catch(() => null);
+    const body: JsonBody = await res.json().catch(() => null);
     if (!res.ok) {
-      const msg =
-        (body && (body.message || body.error)) || `Request gagal (${res.status})`;
-      throw new ApiError(Array.isArray(msg) ? msg.join(', ') : msg, res.status);
+      // Nest mengirim `message` sebagai string atau array string; apa pun
+      // selain itu bukan pesan yang layak ditampilkan ke pemakai.
+      const raw = body?.message ?? body?.error;
+      const text = Array.isArray(raw)
+        ? raw.join(', ')
+        : typeof raw === 'string'
+          ? raw
+          : '';
+      // Pesan kosong tetap jatuh ke teks umum: dialog error tanpa kalimat
+      // sama saja dengan tidak memberi tahu apa yang gagal.
+      throw new ApiError(text.trim() || `Request gagal (${res.status})`, res.status);
     }
     return body;
   }
 
   // Ambil field tertentu dari envelope (default 'data').
-  function pick<T>(body: any, key = 'data'): T {
+  function pick<T>(body: JsonBody, key = 'data'): T {
     return (body?.[key] ?? body) as T;
   }
 
@@ -235,7 +245,7 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
           ...(filter.inStock ? { inStock: 'true' } : {}),
         })}`,
       );
-      const data = body?.data ?? body ?? {};
+      const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
       return {
         items: (data.products ?? []) as MarketplaceProduct[],
         meta: {
