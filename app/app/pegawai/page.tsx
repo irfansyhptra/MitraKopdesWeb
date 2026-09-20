@@ -26,6 +26,7 @@ import {
   Sparkles,
   TriangleAlert,
   Truck,
+  UsersRound,
   Wallet2,
   type LucideIcon,
 } from '@shared/design/icons';
@@ -100,6 +101,8 @@ const ACTIONS: {
   color: string;
   href: string;
   permission: string;
+  /** Disembunyikan sepenuhnya bila tidak berwenang, bukan ditampilkan terkunci. */
+  ownerOnly?: boolean;
 }[] = [
   { label: 'Input Barang', icon: PackagePlus, color: '#d7192d', href: '/pegawai/barang/baru', permission: Permissions.productCreate },
   { label: 'Pesanan Masuk', icon: ReceiptText, color: '#2878d0', href: '/pegawai/pesanan', permission: Permissions.orderRead },
@@ -109,6 +112,10 @@ const ACTIONS: {
   { label: 'Manajemen Stok', icon: Boxes, color: '#f59e0b', href: '/pegawai/stok', permission: Permissions.inventoryRead },
   { label: 'Keuangan', icon: Wallet2, color: '#2f6d3c', href: '/pegawai/keuangan', permission: Permissions.financeReadSummary },
   { label: 'AI Assistant', icon: Sparkles, color: '#b3208c', href: '/pegawai/ai', permission: Permissions.aiAssist },
+  // Milik pemilik koperasi. Tidak ikut tampil terkunci bagi pegawai: yang
+  // terkunci menandakan "ada, tapi bukan untukmu", sedangkan pengelolaan akun
+  // memang bukan bagian pekerjaan pegawai sama sekali.
+  { label: 'Akun Pegawai', icon: UsersRound, color: '#0f766e', href: '/pegawai/akun', permission: Permissions.staffManage, ownerOnly: true },
 ];
 
 /** Latar pastel tile — `KopdesEmployeeColors.tint`: warna pada 12% di atas putih. */
@@ -122,7 +129,7 @@ function QuickAccess() {
   return (
     <StaffSection title="Akses Cepat">
       <div className="staff-quick">
-        {ACTIONS.map((action) => {
+        {ACTIONS.filter((a) => !a.ownerOnly || can(a.permission)).map((action) => {
           const allowed = can(action.permission);
           const body = (
             <>

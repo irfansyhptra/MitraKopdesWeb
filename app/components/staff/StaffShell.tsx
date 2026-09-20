@@ -13,8 +13,10 @@ import {
   ReceiptText,
   Store,
   UserIcon,
+  UsersRound,
   type LucideIcon,
 } from '@shared/design/icons';
+import { Permissions } from '@shared/api';
 
 /**
  * Kerangka portal pegawai — padanan `KopdesEmployeeHeader` dan
@@ -24,10 +26,22 @@ import {
  * memproses pesanan tidak sedang berbelanja.
  */
 
-const NAV: { href: string; label: string; icon: LucideIcon }[] = [
+const NAV: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  /** Tujuan yang hanya ada bagi pemilik koperasi. */
+  permission?: string;
+}[] = [
   { href: '/pegawai', label: 'Beranda', icon: LayoutDashboard },
   { href: '/pegawai/pesanan', label: 'Pesanan', icon: ReceiptText },
   { href: '/pegawai/stok', label: 'Stok', icon: Package2 },
+  {
+    href: '/pegawai/akun',
+    label: 'Akun',
+    icon: UsersRound,
+    permission: Permissions.staffManage,
+  },
   { href: '/pegawai/profil', label: 'Profil', icon: UserIcon },
 ];
 
@@ -55,7 +69,9 @@ export function roleLabel(role: string | null): string {
 
 export function StaffShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? '/pegawai';
-  const { user, role, store, storeUnknown } = useStaff();
+  const { user, role, store, storeUnknown, can } = useStaff();
+  // Navigasi pegawai tidak memuat tujuan yang tidak pernah bisa dibukanya.
+  const nav = NAV.filter((item) => !item.permission || can(item.permission));
   const initial = user?.name.trim()[0]?.toUpperCase() ?? '?';
 
   // Status toko datang dari jadwal operasional. Selama belum terbaca lebih
@@ -110,7 +126,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
       </header>
 
       <nav className="staff-nav" aria-label="Navigasi pegawai">
-        {NAV.map((item) => (
+        {nav.map((item) => (
           <Link
             key={item.href}
             href={item.href}

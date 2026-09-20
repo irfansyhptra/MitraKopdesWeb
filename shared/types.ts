@@ -54,6 +54,10 @@ export const Permissions = {
   umkmProductTakedown: 'umkm:product:takedown',
   aiAssist: 'ai:assist',
   aiExecutive: 'ai:executive',
+  kopdesPolicyManage: 'kopdes:policy:manage',
+  /** Mengelola akun pegawai di Kopdes sendiri — hanya Admin Kopdes. */
+  staffManage: 'staff:manage',
+  userManage: 'user:manage',
 } as const;
 
 export function can(user: User | null, permission: string): boolean {
@@ -292,6 +296,51 @@ export interface InventoryTransaction {
   product?: { id: string; name: string } | null;
   umkmProduct?: { id: string; name: string } | null;
   user?: { id: string; name: string } | null;
+}
+
+// ── Akun pegawai (GET/POST/PATCH/DELETE /admin/staff) ──
+
+export interface PermissionInfo {
+  key: string;
+  /** Label yang dibaca pengurus koperasi, bukan nama teknisnya. */
+  label: string;
+  group: string;
+  description: string;
+}
+
+export interface PermissionCatalog {
+  assignable: string[];
+  items: PermissionInfo[];
+}
+
+export interface StaffAccount {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string | null;
+  role: Role;
+  kopdesId: string | null;
+  /** Kolom mentah. Kosong berarti "pakai bawaan peran", bukan tanpa wewenang. */
+  permissions: string[];
+  /** Izin yang benar-benar berlaku, sudah dihitung backend. */
+  effectivePermissions: string[];
+  usesRoleDefaults: boolean;
+  createdAt: string;
+}
+
+export interface CreatePegawaiInput {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+  permissions?: string[];
+}
+
+export interface UpdatePegawaiInput {
+  name?: string;
+  phone?: string;
+  password?: string;
+  permissions?: string[];
 }
 
 // ── Kurir & pengantaran (GET/PATCH /admin/*) ──

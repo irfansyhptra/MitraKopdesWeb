@@ -35,6 +35,10 @@ import type {
   Courier,
   DeliveryStatusWire,
   InventoryTransaction,
+  CreatePegawaiInput,
+  PermissionCatalog,
+  StaffAccount,
+  UpdatePegawaiInput,
   StaffProductInput,
 } from './types';
 
@@ -449,6 +453,27 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
         method: 'PATCH',
       }),
 
+    // ── Akun pegawai (Admin Kopdes) ──
+    // Lingkupnya satu desa dan satu peran; backend yang menentukan
+    // keduanya, klien tidak pernah mengirim role maupun kopdesId.
+    getPermissionCatalog: () =>
+      request<PermissionCatalog>('/admin/staff/permissions'),
+    getStaffAccounts: () => request<StaffAccount[]>('/admin/staff'),
+    createPegawai: (payload: CreatePegawaiInput) =>
+      request<StaffAccount>('/admin/staff', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    updatePegawai: (id: string, payload: UpdatePegawaiInput) =>
+      request<StaffAccount>(`/admin/staff/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    deletePegawai: (id: string) =>
+      request<{ success: boolean }>(`/admin/staff/${id}`, {
+        method: 'DELETE',
+      }),
+
     // ── Asisten AI staf ──
     // Endpoint terpisah dari `/ai/chat` dan dijaga `ai:assist`.
     aiManagement: async (message: string) => {
@@ -497,5 +522,10 @@ export type {
   Courier,
   DeliveryStatusWire,
   InventoryTransaction,
+  CreatePegawaiInput,
+  PermissionCatalog,
+  PermissionInfo,
+  StaffAccount,
+  UpdatePegawaiInput,
 } from './types';
 export { Permissions, can } from './types';

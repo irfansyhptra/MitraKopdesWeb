@@ -46,6 +46,7 @@ export {
   // Portal pegawai
   LayoutDashboard,
   Package2,
+  UsersRound,
   Bell,
   Clock,
   CircleSlash,
