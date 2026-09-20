@@ -59,7 +59,8 @@ export function AppShell({
   // Portal pegawai punya kerangkanya sendiri. Pegawai yang sedang memproses
   // pesanan tidak sedang berbelanja, jadi navigasi pelanggan tidak ikut
   // digambar di sana.
-  if (pathname.startsWith('/pegawai')) return <>{children}</>;
+  if (pathname.startsWith('/pegawai') || pathname.startsWith('/super-admin'))
+    return <>{children}</>;
 
   return (
     <div className="shell">

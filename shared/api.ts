@@ -35,6 +35,12 @@ import type {
   Courier,
   DeliveryStatusWire,
   InventoryTransaction,
+  ApprovalResult,
+  KopdesApplication,
+  KopdesApplicationStatus,
+  KopdesStats,
+  SubmitApplicationInput,
+  SuperAdminOverview,
   CreatePegawaiInput,
   PermissionCatalog,
   StaffAccount,
@@ -474,6 +480,41 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
         method: 'DELETE',
       }),
 
+    // ── Pengajuan koperasi (publik) ──
+    // Tanpa token: koperasi yang belum bergabung belum punya akun.
+    submitKopdesApplication: (payload: SubmitApplicationInput) =>
+      request<{ id: string; kopdesName: string; createdAt: string }>(
+        '/kopdes-applications',
+        { method: 'POST', body: JSON.stringify(payload) },
+      ),
+
+    // ── Super Admin ──
+    getSuperAdminOverview: () =>
+      request<SuperAdminOverview>('/super-admin/overview'),
+    getApplications: (status?: KopdesApplicationStatus) =>
+      request<KopdesApplication[]>(
+        `/super-admin/applications${status ? toQuery({ status }) : ''}`,
+      ),
+    getApplicationCounts: () =>
+      request<Record<KopdesApplicationStatus, number>>(
+        '/super-admin/applications/counts',
+      ),
+    approveApplication: (
+      id: string,
+      payload: { latitude: number; longitude: number; reviewNote?: string },
+    ) =>
+      request<ApprovalResult>(`/super-admin/applications/${id}/approve`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    rejectApplication: (id: string, reviewNote: string) =>
+      request<KopdesApplication>(`/super-admin/applications/${id}/reject`, {
+        method: 'PATCH',
+        body: JSON.stringify({ reviewNote }),
+      }),
+    /** Hanya jumlah per koperasi; backend tidak menyediakan rinciannya. */
+    getKopdesStats: () => request<KopdesStats[]>('/super-admin/kopdes'),
+
     // ── Asisten AI staf ──
     // Endpoint terpisah dari `/ai/chat` dan dijaga `ai:assist`.
     aiManagement: async (message: string) => {
@@ -527,5 +568,11 @@ export type {
   PermissionInfo,
   StaffAccount,
   UpdatePegawaiInput,
+  ApprovalResult,
+  KopdesApplication,
+  KopdesApplicationStatus,
+  KopdesStats,
+  SubmitApplicationInput,
+  SuperAdminOverview,
 } from './types';
 export { Permissions, can } from './types';

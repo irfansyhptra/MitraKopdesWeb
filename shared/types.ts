@@ -298,6 +298,83 @@ export interface InventoryTransaction {
   user?: { id: string; name: string } | null;
 }
 
+// ── Pengajuan koperasi & pemantauan (Super Admin) ──
+
+export type KopdesApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface KopdesApplication {
+  id: string;
+  kopdesName: string;
+  description?: string | null;
+  address: string;
+  village: string;
+  district: string;
+  city: string;
+  province: string;
+  postalCode?: string | null;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  notes?: string | null;
+  status: KopdesApplicationStatus;
+  reviewNote?: string | null;
+  reviewedAt?: string | null;
+  kopdesId?: string | null;
+  createdAt: string;
+}
+
+export interface SubmitApplicationInput {
+  kopdesName: string;
+  description?: string;
+  address: string;
+  village: string;
+  district: string;
+  city: string;
+  province: string;
+  postalCode?: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  notes?: string;
+}
+
+/**
+ * Hasil persetujuan. `initialPassword` hanya ada di respons ini — setelah
+ * halaman ditutup tidak ada cara membacanya lagi.
+ */
+export interface ApprovalResult {
+  kopdes: { id: string; name: string };
+  admin: { id: string; email: string; name: string };
+  initialPassword: string;
+}
+
+/** Jumlah per koperasi — hanya jumlah, tanpa rincian transaksi apa pun. */
+export interface KopdesStats {
+  id: string;
+  name: string;
+  village: string;
+  district: string;
+  city: string;
+  province: string;
+  isActive: boolean;
+  isVerified: boolean;
+  createdAt: string;
+  counts: {
+    products: number;
+    orders: number;
+    staff: number;
+    umkms: number;
+  };
+}
+
+export interface SuperAdminOverview {
+  totalUsers: number;
+  usersByRole?: Record<string, number> | { role: string; count: number }[];
+  totalOrders: number;
+  totalMitra?: number;
+  pendingMitra?: number;
+}
+
 // ── Akun pegawai (GET/POST/PATCH/DELETE /admin/staff) ──
 
 export interface PermissionInfo {
