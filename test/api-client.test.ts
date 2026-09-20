@@ -92,33 +92,39 @@ describe('penyimpanan barang', () => {
     stock: 10, minStock: 5, unit: 'pcs', isActive: false, isPreOrderAllowed: false,
   };
 
-  it('mengirim JSON, bukan multipart — berkas tidak lagi melewati server', async () => {
+  it('tanpa gambar mengirim JSON biasa', async () => {
     const fetchMock = withFetch(201, { success: true, data: { id: 'p1' } });
-    await client().saveStaffProduct({
-      ...product,
-      imageUrls: ['https://res.cloudinary.com/x/a.jpg'],
-    });
+    await client().saveStaffProduct(product);
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('https://contoh.test/api/v1/products');
     expect(init.method).toBe('POST');
-    expect(init.body).not.toBeInstanceOf(FormData);
-    expect(JSON.parse(init.body).imageUrls).toEqual([
-      'https://res.cloudinary.com/x/a.jpg',
-    ]);
+    expect(JSON.parse(init.body)).toEqual(product);
   });
 
-  it('flag bernilai false tetap terkirim, bukan hilang', async () => {
+  it('dengan gambar mengirim multipart dan membiarkan peramban menulis boundary', async () => {
     const fetchMock = withFetch(201, { success: true, data: { id: 'p1' } });
-    await client().saveStaffProduct(product);
-    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    const photo = new File(['image'], 'beras.png', { type: 'image/png' });
+    await client().saveStaffProduct(product, [photo]);
+    const init = fetchMock.mock.calls[0][1];
+    expect(init.body).toBeInstanceOf(FormData);
+    // Menimpa Content-Type menghilangkan boundary, dan backend gagal mengurai.
+    expect(init.headers['Content-Type']).toBeUndefined();
+    expect(init.body.getAll('images')).toHaveLength(1);
+  });
+
+  it('flag bernilai false tetap terkirim di multipart', async () => {
+    const fetchMock = withFetch(201, { success: true, data: { id: 'p1' } });
+    const photo = new File(['image'], 'a.png', { type: 'image/png' });
+    await client().saveStaffProduct(product, [photo]);
+    const form = fetchMock.mock.calls[0][1].body as FormData;
     // `false` yang hilang membuat barang nonaktif diam-diam tayang.
-    expect(sent.isActive).toBe(false);
-    expect(sent.isPreOrderAllowed).toBe(false);
+    expect(form.get('isActive')).toBe('false');
+    expect(form.get('isPreOrderAllowed')).toBe('false');
   });
 
   it('menyunting memakai PUT ke id barangnya', async () => {
     const fetchMock = withFetch(200, { success: true, data: { id: 'p1' } });
-    await client().saveStaffProduct(product, 'p1');
+    await client().saveStaffProduct(product, [], 'p1');
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('https://contoh.test/api/v1/products/p1');
     expect(init.method).toBe('PUT');
