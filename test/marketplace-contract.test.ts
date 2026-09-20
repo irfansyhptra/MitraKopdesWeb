@@ -126,3 +126,27 @@ describe('pemetaan respons', () => {
     expect(res.meta).toEqual({ total: 26, page: 2, limit: 8, totalPages: 4 });
   });
 });
+
+/**
+ * Parameter dari URL.
+ *
+ * Tautan lama memakai huruf kecil (`?sellerType=umkm`). Meneruskannya apa
+ * adanya membuat backend menjawab 400 dan katalog tampil kosong — satu
+ * bookmark cukup untuk mematahkan halamannya.
+ */
+describe('sellerType dari URL', () => {
+  it('huruf kecil dari tautan lama tetap diterima', async () => {
+    const { readSellerType } = await import('@/app/marketplace/readSellerType');
+    expect(readSellerType('umkm')).toBe('UMKM');
+    expect(readSellerType('kopdes')).toBe('KOPDES');
+    expect(readSellerType('all')).toBe('ALL');
+  });
+
+  it('nilai asing jatuh ke ALL, bukan menggagalkan halaman', async () => {
+    const { readSellerType } = await import('@/app/marketplace/readSellerType');
+    expect(readSellerType('relevance')).toBe('ALL');
+    expect(readSellerType('')).toBe('ALL');
+    expect(readSellerType(null)).toBe('ALL');
+    expect(readSellerType(undefined)).toBe('ALL');
+  });
+});

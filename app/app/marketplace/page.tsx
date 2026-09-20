@@ -22,6 +22,7 @@ import {
   type LucideIcon,
 } from '@shared/design/icons';
 import { formatRupiah, toRupiah } from '@shared/format';
+import { readSellerType } from './readSellerType';
 import type {
   Category,
   MarketplaceFilter,
@@ -79,7 +80,7 @@ function MarketplaceBrowser() {
   const initialQuery = params?.get('q') ?? '';
 
   const [filter, setFilter] = useState<MarketplaceFilter>(() => ({
-    sellerType: (params?.get('sellerType') as MarketplaceSellerType) ?? 'ALL',
+    sellerType: readSellerType(params?.get('sellerType')),
     sort: 'newest',
     categoryId: params?.get('categoryId') ?? undefined,
     search: initialQuery || undefined,
