@@ -7,11 +7,12 @@ import { useAsync } from '@/components/staff/useAsync';
 import { StaffError, StaffSkeleton } from '@/components/staff/Section';
 import { Permissions } from '@shared/api';
 import type {
+  AssignableRole,
   PermissionCatalog,
   PermissionInfo,
   StaffAccount,
 } from '@shared/api';
-import { Lock, Plus, Trash2, UserIcon } from '@shared/design/icons';
+import { Bike, Lock, Plus, Trash2, UserIcon } from '@shared/design/icons';
 
 /**
  * Akun Pegawai — panel pemilik Kopdes.
@@ -67,11 +68,11 @@ export default function StaffAccountsPage() {
       >
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 className="staff-section__title" style={{ fontSize: 20 }}>
-            Akun Pegawai
+            Akun Koperasi
           </h1>
           <p style={{ fontSize: 13, color: 'var(--st-muted)', marginTop: 2 }}>
-            Angkat pegawai koperasi dan tentukan bagian portal yang terbuka
-            untuk tiap orang.
+            Angkat pegawai dan kurir koperasi, lalu tentukan bagian portal
+            yang terbuka untuk tiap orang.
           </p>
         </div>
         <button
@@ -80,7 +81,7 @@ export default function StaffAccountsPage() {
           style={{ width: 'auto' }}
           onClick={() => setCreating(true)}
         >
-          <Plus size={15} aria-hidden="true" /> Tambah Pegawai
+          <Plus size={15} aria-hidden="true" /> Tambah Akun
         </button>
       </div>
 
@@ -105,7 +106,8 @@ export default function StaffAccountsPage() {
 
       {!accounts.loading && !accounts.error && accounts.data?.length === 0 && (
         <div className="staff-surface staff-empty">
-          Belum ada pegawai di koperasi ini. Tambahkan lewat tombol di atas.
+          Belum ada pegawai atau kurir di koperasi ini. Tambahkan lewat tombol
+          di atas.
         </div>
       )}
 
@@ -157,6 +159,7 @@ function AccountRow({
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isCourier = account.role === 'COURIER';
   const total = catalog?.assignable.length ?? 0;
   const granted = account.effectivePermissions.length;
 
@@ -176,7 +179,11 @@ function AccountRow({
   return (
     <div className="staff-order">
       <span className="staff-order__thumb">
-        <UserIcon size={20} aria-hidden="true" />
+        {isCourier ? (
+          <Bike size={20} aria-hidden="true" />
+        ) : (
+          <UserIcon size={20} aria-hidden="true" />
+        )}
       </span>
 
       <div className="staff-order__body">
@@ -193,23 +200,24 @@ function AccountRow({
               tidak terbaca sebagai "tanpa wewenang". */}
           <span
             className="staff-chip"
-            style={
-              account.usesRoleDefaults
-                ? {
-                    ['--chip-fg' as string]: 'var(--st-success)',
-                    ['--chip-bg' as string]:
-                      'color-mix(in srgb, var(--st-success) 12%, #fff)',
-                  }
-                : {
-                    ['--chip-fg' as string]: 'var(--st-info)',
-                    ['--chip-bg' as string]:
-                      'color-mix(in srgb, var(--st-info) 12%, #fff)',
-                  }
-            }
+            style={{
+              ['--chip-fg' as string]: isCourier
+                ? 'var(--st-purple)'
+                : account.usesRoleDefaults
+                  ? 'var(--st-success)'
+                  : 'var(--st-info)',
+              ['--chip-bg' as string]: isCourier
+                ? 'color-mix(in srgb, var(--st-purple) 12%, #fff)'
+                : account.usesRoleDefaults
+                  ? 'color-mix(in srgb, var(--st-success) 12%, #fff)'
+                  : 'color-mix(in srgb, var(--st-info) 12%, #fff)',
+            }}
           >
-            {account.usesRoleDefaults
-              ? 'Akses penuh pegawai'
-              : `Dibatasi · ${granted} dari ${total} wewenang`}
+            {isCourier
+              ? 'Kurir koperasi'
+              : account.usesRoleDefaults
+                ? 'Akses penuh pegawai'
+                : `Dibatasi · ${granted} dari ${total} wewenang`}
           </span>
         </p>
         {error && (
@@ -251,7 +259,7 @@ function AccountRow({
               style={{ width: 'auto' }}
               onClick={onEdit}
             >
-              Atur Akses
+              {isCourier ? 'Ubah Akun' : 'Atur Akses'}
             </button>
             {/* Menghapus akun tidak bisa dibatalkan, jadi selalu lewat
                 konfirmasi — bukan dialog peramban yang gampang ditekan
@@ -290,12 +298,26 @@ function AccountDialog({
   const [phone, setPhone] = useState(account?.phone ?? '');
   const [password, setPassword] = useState('');
 
-  // Mode akses: "penuh" mengirim daftar kosong, yang backend artikan sebagai
-  // bawaan peran. Menyimpan seluruh daftar sebagai override juga akan bekerja
-  // hari ini, tetapi akun itu lalu berhenti ikut ketika bawaan peran berubah.
-  const [restricted, setRestricted] = useState(
-    account ? !account.usesRoleDefaults : false,
+  /**
+   * Tiga pilihan akses, dan satu di antaranya bukan soal wewenang melainkan
+   * peran: kurir tidak membuka portal pegawai sama sekali, jadi daftar
+   * wewenang tidak berlaku untuknya.
+   *
+   * "penuh" mengirim daftar KOSONG, yang backend artikan sebagai bawaan
+   * peran. Menyimpan seluruh daftar sebagai override juga bekerja hari ini,
+   * tetapi akun itu lalu berhenti ikut ketika bawaan peran berubah.
+   */
+  const [access, setAccess] = useState<'full' | 'custom' | 'courier'>(
+    account
+      ? account.role === 'COURIER'
+        ? 'courier'
+        : account.usesRoleDefaults
+          ? 'full'
+          : 'custom'
+      : 'full',
   );
+  const restricted = access === 'custom';
+  const isCourier = access === 'courier';
   const [selected, setSelected] = useState<Set<string>>(
     new Set(account?.effectivePermissions ?? catalog.assignable),
   );
@@ -328,6 +350,12 @@ function AccountDialog({
     (!password || password.length >= 8) &&
     (!restricted || selected.size > 0);
 
+  // Peran tidak bisa diubah setelah akun ada: memindahkan pegawai menjadi
+  // kurir akan mencabut wewenangnya diam-diam, dan sebaliknya memberi akses
+  // portal kepada orang yang selama ini hanya mengantar. Hapus lalu buat
+  // ulang kalau memang perlu.
+  const roleLocked = isEdit;
+
   async function submit() {
     setBusy(true);
     setError(null);
@@ -337,7 +365,9 @@ function AccountDialog({
         await api.updatePegawai(account.id, {
           name: name.trim(),
           phone: phone.trim(),
-          permissions,
+          // Kurir tidak punya wewenang untuk dikirim; backend pun
+          // mengabaikannya, tapi mengirimnya tetap menyesatkan.
+          ...(isCourier ? {} : { permissions }),
           ...(password ? { password } : {}),
         });
       } else {
@@ -346,7 +376,9 @@ function AccountDialog({
           password,
           name: name.trim(),
           ...(phone.trim() ? { phone: phone.trim() } : {}),
-          permissions,
+          ...(isCourier
+            ? { role: 'COURIER' as AssignableRole }
+            : { permissions }),
         });
       }
       onSaved();
@@ -439,45 +471,62 @@ function AccountDialog({
             Akses
           </legend>
 
-          <label style={accessRowStyle}>
-            <input
-              type="radio"
-              name="access"
-              checked={!restricted}
-              onChange={() => setRestricted(false)}
-              style={{ accentColor: 'var(--st-primary)' }}
-            />
-            <span>
-              <strong style={{ fontSize: 13.5, color: 'var(--st-ink)' }}>
-                Pegawai penuh
-              </strong>
-              <span className="t-caption-sm" style={{ display: 'block' }}>
-                Seluruh pekerjaan harian koperasi. Ikut menyesuaikan sendiri
-                bila wewenang bawaan pegawai berubah di kemudian hari.
+          {ACCESS_CHOICES.map((choice) => (
+            <label
+              key={choice.id}
+              style={{
+                ...accessRowStyle,
+                // Peran terkunci saat menyunting; pilihan yang tidak bisa
+                // dipilih diredupkan, bukan dihilangkan, supaya terlihat
+                // bahwa akun ini memang jenis yang lain.
+                opacity:
+                  roleLocked && isCourierChoice(choice.id) !== isCourier
+                    ? 0.4
+                    : 1,
+                cursor:
+                  roleLocked && isCourierChoice(choice.id) !== isCourier
+                    ? 'not-allowed'
+                    : 'pointer',
+              }}
+            >
+              <input
+                type="radio"
+                name="access"
+                checked={access === choice.id}
+                disabled={
+                  roleLocked && isCourierChoice(choice.id) !== isCourier
+                }
+                onChange={() => setAccess(choice.id)}
+                style={{ accentColor: 'var(--st-primary)' }}
+              />
+              <span>
+                <strong style={{ fontSize: 13.5, color: 'var(--st-ink)' }}>
+                  {choice.label}
+                </strong>
+                <span className="t-caption-sm" style={{ display: 'block' }}>
+                  {choice.description}
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
+          ))}
 
-          <label style={accessRowStyle}>
-            <input
-              type="radio"
-              name="access"
-              checked={restricted}
-              onChange={() => setRestricted(true)}
-              style={{ accentColor: 'var(--st-primary)' }}
-            />
-            <span>
-              <strong style={{ fontSize: 13.5, color: 'var(--st-ink)' }}>
-                Pilih sendiri
-              </strong>
-              <span className="t-caption-sm" style={{ display: 'block' }}>
-                Tentukan satu per satu. Yang tidak dicentang akan tampil
-                terkunci di portal pegawai dan ditolak server bila tetap
-                dipanggil.
-              </span>
-            </span>
-          </label>
+          {roleLocked && (
+            <p className="t-caption-sm">
+              Jenis akun tidak bisa diubah setelah dibuat. Hapus lalu buat
+              ulang bila memang perlu.
+            </p>
+          )}
         </fieldset>
+
+        {isCourier && (
+          <div className="staff-surface" style={{ background: 'var(--st-bg)' }}>
+            <p style={{ fontSize: 13, color: 'var(--st-muted)' }}>
+              Kurir tidak membuka portal pegawai. Ia memakai aplikasi kurir
+              untuk menerima tugas antar, dan hanya melihat pengantaran
+              koperasi ini.
+            </p>
+          </div>
+        )}
 
         {restricted && (
           <div className="stack-md">
@@ -541,6 +590,33 @@ function AccountDialog({
     </div>
   );
 }
+
+const ACCESS_CHOICES: {
+  id: 'full' | 'custom' | 'courier';
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: 'full',
+    label: 'Pegawai penuh',
+    description:
+      'Seluruh pekerjaan harian koperasi. Ikut menyesuaikan sendiri bila wewenang bawaan pegawai berubah di kemudian hari.',
+  },
+  {
+    id: 'custom',
+    label: 'Pegawai · pilih sendiri',
+    description:
+      'Tentukan satu per satu. Yang tidak dicentang akan tampil terkunci di portal pegawai dan ditolak server bila tetap dipanggil.',
+  },
+  {
+    id: 'courier',
+    label: 'Kurir',
+    description:
+      'Mengantar pesanan koperasi ini. Tidak membuka portal pegawai sama sekali, jadi tidak ada wewenang yang perlu dipilih.',
+  },
+];
+
+const isCourierChoice = (id: string) => id === 'courier';
 
 const accessRowStyle: React.CSSProperties = {
   display: 'flex',

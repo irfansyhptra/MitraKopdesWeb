@@ -434,11 +434,17 @@ export interface StaffAccount {
   createdAt: string;
 }
 
+/** Peran yang boleh diangkat Admin Kopdes. Cerminan ASSIGNABLE_ROLES. */
+export type AssignableRole = 'PEGAWAI_KOPDES' | 'COURIER';
+
 export interface CreatePegawaiInput {
   email: string;
   password: string;
   name: string;
   phone?: string;
+  /** Dikosongkan berarti pegawai. */
+  role?: AssignableRole;
+  /** Diabaikan backend bila perannya kurir. */
   permissions?: string[];
 }
 

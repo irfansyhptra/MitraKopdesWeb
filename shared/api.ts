@@ -564,6 +564,7 @@ export type ApiClient = ReturnType<typeof createApiClient>;
 
 export type {
   Address,
+  AssignableRole,
   ApiResponse,
   AuthResult,
   Cart,

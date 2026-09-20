@@ -54,7 +54,7 @@ beforeEach(() => {
   mocks.update.mockResolvedValue({ id: 'p1' });
 });
 
-describe('panel akun pegawai', () => {
+describe('panel akun koperasi', () => {
   it('tidak memanggil endpoint apa pun tanpa wewenang', async () => {
     mocks.can.mockReturnValue(false);
     render(<AccountsPage />);
@@ -66,7 +66,7 @@ describe('panel akun pegawai', () => {
   it('"pegawai penuh" mengirim daftar kosong, bukan seluruh izin', async () => {
     const user = userEvent.setup();
     render(<AccountsPage />);
-    await user.click(await screen.findByRole('button', { name: /Tambah Pegawai/ }));
+    await user.click(await screen.findByRole('button', { name: /Tambah Akun/ }));
 
     await user.type(screen.getByLabelText('Nama'), 'Andi');
     await user.type(screen.getByLabelText('Email'), 'andi@kopdes.co');
@@ -80,12 +80,12 @@ describe('panel akun pegawai', () => {
   it('mode "pilih sendiri" mengirim hanya yang dicentang', async () => {
     const user = userEvent.setup();
     render(<AccountsPage />);
-    await user.click(await screen.findByRole('button', { name: /Tambah Pegawai/ }));
+    await user.click(await screen.findByRole('button', { name: /Tambah Akun/ }));
 
     await user.type(screen.getByLabelText('Nama'), 'Dewi');
     await user.type(screen.getByLabelText('Email'), 'dewi@kopdes.co');
     await user.type(screen.getByLabelText('Kata sandi'), 'rahasia123');
-    await user.click(screen.getByLabelText(/Pilih sendiri/));
+    await user.click(screen.getByLabelText(/Pegawai · pilih sendiri/));
 
     // Semula semua tercentang; lepas dua, sisakan satu.
     await user.click(screen.getByRole('checkbox', { name: /Proses pesanan/ }));
@@ -99,12 +99,12 @@ describe('panel akun pegawai', () => {
   it('menolak menyimpan akun tanpa satu pun wewenang', async () => {
     const user = userEvent.setup();
     render(<AccountsPage />);
-    await user.click(await screen.findByRole('button', { name: /Tambah Pegawai/ }));
+    await user.click(await screen.findByRole('button', { name: /Tambah Akun/ }));
 
     await user.type(screen.getByLabelText('Nama'), 'Kosong');
     await user.type(screen.getByLabelText('Email'), 'kosong@kopdes.co');
     await user.type(screen.getByLabelText('Kata sandi'), 'rahasia123');
-    await user.click(screen.getByLabelText(/Pilih sendiri/));
+    await user.click(screen.getByLabelText(/Pegawai · pilih sendiri/));
     for (const label of [/Lihat pesanan/, /Proses pesanan/, /Lihat stok/]) {
       await user.click(screen.getByRole('checkbox', { name: label }));
     }
@@ -145,5 +145,72 @@ describe('panel akun pegawai', () => {
     expect(mocks.remove).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: 'Ya, hapus' }));
     await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith('p1'));
+  });
+});
+
+describe('kurir', () => {
+  async function openDialog(user: ReturnType<typeof userEvent.setup>) {
+    render(<AccountsPage />);
+    await user.click(await screen.findByRole('button', { name: /Tambah Akun/ }));
+    await user.type(screen.getByLabelText('Nama'), 'Pak Kurir');
+    await user.type(screen.getByLabelText('Email'), 'kurir@kopdes.co');
+    await user.type(screen.getByLabelText('Kata sandi'), 'rahasia123');
+  }
+
+  it('mengirim role COURIER dan tanpa daftar wewenang', async () => {
+    const user = userEvent.setup();
+    await openDialog(user);
+    await user.click(screen.getByLabelText(/Kurir/));
+    await user.click(screen.getByRole('button', { name: 'Buat Akun' }));
+
+    await waitFor(() => expect(mocks.create).toHaveBeenCalled());
+    const sent = mocks.create.mock.calls[0][0];
+    expect(sent.role).toBe('COURIER');
+    // Wewenang tidak berlaku bagi kurir; mengirimnya menyesatkan pembaca
+    // barisnya nanti meski backend mengabaikannya.
+    expect(sent).not.toHaveProperty('permissions');
+  });
+
+  it('daftar centang wewenang tidak muncul untuk kurir', async () => {
+    const user = userEvent.setup();
+    await openDialog(user);
+    await user.click(screen.getByLabelText(/Kurir/));
+
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getByText(/tidak membuka portal pegawai/)).toBeInTheDocument();
+  });
+
+  it('jenis akun terkunci saat menyunting', async () => {
+    mocks.list.mockResolvedValue([
+      {
+        id: 'k1', email: 'k@b.co', name: 'Kurir Lama', phone: null, role: 'COURIER',
+        kopdesId: 'k1', permissions: [], effectivePermissions: [],
+        usesRoleDefaults: true, createdAt: '2026-01-01',
+      },
+    ]);
+    const user = userEvent.setup();
+    render(<AccountsPage />);
+    await user.click(await screen.findByRole('button', { name: 'Ubah Akun' }));
+
+    // Memindahkan kurir menjadi pegawai akan memberinya akses portal
+    // diam-diam; sebaliknya mencabut wewenang pegawai tanpa jejak.
+    // Label memuat judul + keterangannya, jadi radionya diambil berurutan:
+    // penuh, pilih sendiri, kurir.
+    const [penuh, pilih, kurir] = screen.getAllByRole('radio');
+    expect(penuh).toBeDisabled();
+    expect(pilih).toBeDisabled();
+    expect(kurir).toBeChecked();
+  });
+
+  it('kurir ditandai di daftar akun', async () => {
+    mocks.list.mockResolvedValue([
+      {
+        id: 'k1', email: 'k@b.co', name: 'Kurir Lama', phone: null, role: 'COURIER',
+        kopdesId: 'k1', permissions: [], effectivePermissions: [],
+        usesRoleDefaults: true, createdAt: '2026-01-01',
+      },
+    ]);
+    render(<AccountsPage />);
+    expect(await screen.findByText('Kurir koperasi')).toBeInTheDocument();
   });
 });
