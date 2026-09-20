@@ -2,10 +2,13 @@
 
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useState } from 'react';
 import { useAsync } from '@/components/staff/useAsync';
+import { CreateKopdesDialog } from '@/components/super/CreateKopdesDialog';
+import { CredentialPanel } from '@/components/super/CredentialPanel';
 import { StaffError, StaffSkeleton } from '@/components/staff/Section';
-import type { KopdesStats } from '@shared/api';
-import { Boxes, Building2, ReceiptText, Store } from '@shared/design/icons';
+import type { ApprovalResult, KopdesStats } from '@shared/api';
+import { Boxes, Building2, Plus, ReceiptText, Store } from '@shared/design/icons';
 
 /**
  * Pemantauan koperasi — **hanya jumlah**.
@@ -18,6 +21,8 @@ import { Boxes, Building2, ReceiptText, Store } from '@shared/design/icons';
  */
 export default function KopdesMonitorPage() {
   const stats = useAsync<KopdesStats[]>(() => api.getKopdesStats());
+  const [creating, setCreating] = useState(false);
+  const [created, setCreated] = useState<ApprovalResult | null>(null);
 
   const total = (stats.data ?? []).reduce(
     (acc, k) => ({
@@ -31,13 +36,36 @@ export default function KopdesMonitorPage() {
 
   return (
     <>
-      <h1 className="staff-section__title" style={{ fontSize: 20 }}>
-        Koperasi Terdaftar
-      </h1>
-      <p style={{ fontSize: 13, color: 'var(--st-muted)', margin: '2px 0 var(--sp-base)' }}>
-        Jumlah barang, pesanan, pegawai, dan mitra per koperasi. Rincian
-        transaksi adalah urusan masing-masing Kopdes.
-      </p>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 'var(--sp-md)',
+          flexWrap: 'wrap',
+          marginBottom: 'var(--sp-base)',
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 className="staff-section__title" style={{ fontSize: 20 }}>
+            Koperasi Terdaftar
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--st-muted)', marginTop: 2 }}>
+            Jumlah barang, pesanan, pegawai, dan mitra per koperasi. Rincian
+            transaksi adalah urusan masing-masing Kopdes.
+          </p>
+        </div>
+        {/* Jalur kedua di samping kotak pengajuan: permintaan yang datang
+            lewat telepon atau tatap muka tidak perlu diminta mengisi formulir
+            lebih dulu. */}
+        <button
+          type="button"
+          className="staff-btn"
+          style={{ width: 'auto' }}
+          onClick={() => setCreating(true)}
+        >
+          <Plus size={15} aria-hidden="true" /> Buat Koperasi
+        </button>
+      </div>
 
       {stats.loading && <StaffSkeleton height={180} />}
 
@@ -50,7 +78,8 @@ export default function KopdesMonitorPage() {
           Belum ada koperasi terdaftar.{' '}
           <Link href="/super-admin/pengajuan" className="staff-section__action">
             Lihat pengajuan masuk
-          </Link>
+          </Link>{' '}
+          atau buat langsung lewat tombol di atas.
         </div>
       )}
 
@@ -103,6 +132,43 @@ export default function KopdesMonitorPage() {
             ))}
           </div>
         </>
+      )}
+
+      <Dialogs
+        creating={creating}
+        created={created}
+        onCloseCreate={() => setCreating(false)}
+        onCreated={(result) => {
+          setCreating(false);
+          setCreated(result);
+          stats.reload();
+        }}
+        onCloseCredential={() => setCreated(null)}
+      />
+    </>
+  );
+}
+
+function Dialogs({
+  creating,
+  created,
+  onCloseCreate,
+  onCreated,
+  onCloseCredential,
+}: {
+  creating: boolean;
+  created: ApprovalResult | null;
+  onCloseCreate: () => void;
+  onCreated: (r: ApprovalResult) => void;
+  onCloseCredential: () => void;
+}) {
+  return (
+    <>
+      {creating && (
+        <CreateKopdesDialog onClose={onCloseCreate} onCreated={onCreated} />
+      )}
+      {created && (
+        <CredentialPanel result={created} onClose={onCloseCredential} />
       )}
     </>
   );

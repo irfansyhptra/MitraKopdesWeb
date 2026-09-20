@@ -348,6 +348,27 @@ export interface ApprovalResult {
   initialPassword: string;
 }
 
+/**
+ * Pembuatan koperasi langsung. Koordinat wajib: tidak ada langkah kedua
+ * yang bisa melengkapinya nanti, dan tanpa itu koperasinya tidak pernah
+ * muncul di pencarian terdekat.
+ */
+export interface CreateKopdesDirectInput {
+  kopdesName: string;
+  description?: string;
+  address: string;
+  village: string;
+  district: string;
+  city: string;
+  province: string;
+  postalCode?: string;
+  latitude: number;
+  longitude: number;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+}
+
 /** Jumlah per koperasi — hanya jumlah, tanpa rincian transaksi apa pun. */
 export interface KopdesStats {
   id: string;

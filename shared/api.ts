@@ -36,6 +36,7 @@ import type {
   DeliveryStatusWire,
   InventoryTransaction,
   ApprovalResult,
+  CreateKopdesDirectInput,
   KopdesApplication,
   KopdesApplicationStatus,
   KopdesStats,
@@ -514,6 +515,16 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
       }),
     /** Hanya jumlah per koperasi; backend tidak menyediakan rinciannya. */
     getKopdesStats: () => request<KopdesStats[]>('/super-admin/kopdes'),
+    /**
+     * Membuat koperasi tanpa melewati formulir pengajuan — untuk permintaan
+     * yang datang langsung. Mengembalikan kata sandi awal satu kali, sama
+     * seperti jalur persetujuan.
+     */
+    createKopdesDirect: (payload: CreateKopdesDirectInput) =>
+      request<ApprovalResult>('/super-admin/kopdes', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
 
     // ── Asisten AI staf ──
     // Endpoint terpisah dari `/ai/chat` dan dijaga `ai:assist`.
@@ -569,6 +580,7 @@ export type {
   StaffAccount,
   UpdatePegawaiInput,
   ApprovalResult,
+  CreateKopdesDirectInput,
   KopdesApplication,
   KopdesApplicationStatus,
   KopdesStats,
