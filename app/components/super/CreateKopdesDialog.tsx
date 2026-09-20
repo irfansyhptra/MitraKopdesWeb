@@ -28,10 +28,20 @@ const KOPDES_FIELDS = [
 ] as const;
 
 const CONTACT_FIELDS = [
-  { name: 'contactName', label: 'Nama pengurus', type: 'text' },
-  { name: 'contactEmail', label: 'Email pengurus', type: 'email' },
-  { name: 'contactPhone', label: 'Nomor WhatsApp', type: 'tel' },
+  { name: 'contactName', label: 'Nama pengurus', type: 'text', hint: undefined },
+  {
+    name: 'contactEmail',
+    // Sistem ini masuk dengan email; tidak ada kolom username terpisah di
+    // tabel User. Menuliskannya begini supaya pengurus sistem tahu persis
+    // apa yang harus diteruskan sebagai "username".
+    label: 'Email pengurus — dipakai untuk masuk',
+    type: 'email',
+    hint: 'Ini yang diketik pengurus di halaman masuk.',
+  },
+  { name: 'contactPhone', label: 'Nomor WhatsApp', type: 'tel', hint: undefined },
 ] as const;
+
+const MIN_PASSWORD = 8;
 
 export function CreateKopdesDialog({
   onClose,
@@ -41,6 +51,11 @@ export function CreateKopdesDialog({
   onCreated: (result: ApprovalResult) => void;
 }) {
   const [form, setForm] = useState<Record<string, string>>({});
+  // Bawaannya dibuatkan sistem: kata sandi acak 12 karakter lebih baik
+  // daripada yang diketik terburu-buru, dan hasilnya tetap ditampilkan untuk
+  // diteruskan. Mengetik sendiri disediakan untuk pengurus yang memintanya.
+  const [ownPassword, setOwnPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,11 +72,17 @@ export function CreateKopdesDialog({
     Math.abs(lat) <= 90 &&
     Math.abs(lng) <= 180;
 
+  const password = form.initialPassword ?? '';
+  const passwordValid = !ownPassword || password.length >= MIN_PASSWORD;
+
   const required = [
     ...KOPDES_FIELDS.filter((f) => f.required).map((f) => f.name),
     ...CONTACT_FIELDS.map((f) => f.name),
   ];
-  const valid = required.every((n) => (form[n] ?? '').trim() !== '') && coordsValid;
+  const valid =
+    required.every((n) => (form[n] ?? '').trim() !== '') &&
+    coordsValid &&
+    passwordValid;
 
   async function submit() {
     setBusy(true);
@@ -82,6 +103,9 @@ export function CreateKopdesDialog({
           contactPhone: form.contactPhone.trim(),
           ...(form.postalCode?.trim() ? { postalCode: form.postalCode.trim() } : {}),
           ...(form.description?.trim() ? { description: form.description.trim() } : {}),
+          // Tidak dikirim sama sekali bila dibuatkan sistem — mengirim string
+          // kosong akan ditolak validasi panjang minimum di server.
+          ...(ownPassword ? { initialPassword: password } : {}),
         }),
       );
     } catch (e) {
@@ -176,11 +200,104 @@ export function CreateKopdesDialog({
             <input
               id={`ck-${f.name}`}
               type={f.type}
+              autoComplete="off"
               value={form[f.name] ?? ''}
               onChange={(e) => set(f.name, e.target.value)}
             />
+            {f.hint && <p className="t-caption-sm">{f.hint}</p>}
           </div>
         ))}
+
+        <fieldset style={{ border: 'none' }}>
+          <legend
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: 'var(--st-muted)',
+              marginBottom: 'var(--sp-sm)',
+            }}
+          >
+            Kata sandi awal
+          </legend>
+
+          <label style={choiceStyle}>
+            <input
+              type="radio"
+              name="pwmode"
+              checked={!ownPassword}
+              onChange={() => setOwnPassword(false)}
+              style={{ accentColor: 'var(--st-primary)' }}
+            />
+            <span>
+              <strong style={{ fontSize: 13.5, color: 'var(--st-ink)' }}>
+                Buatkan otomatis
+              </strong>
+              <span className="t-caption-sm" style={{ display: 'block' }}>
+                12 karakter acak, tanpa huruf yang mudah salah dengar seperti
+                0/O dan 1/l/I.
+              </span>
+            </span>
+          </label>
+
+          <label style={choiceStyle}>
+            <input
+              type="radio"
+              name="pwmode"
+              checked={ownPassword}
+              onChange={() => setOwnPassword(true)}
+              style={{ accentColor: 'var(--st-primary)' }}
+            />
+            <span>
+              <strong style={{ fontSize: 13.5, color: 'var(--st-ink)' }}>
+                Tentukan sendiri
+              </strong>
+              <span className="t-caption-sm" style={{ display: 'block' }}>
+                Untuk pengurus yang sudah menyebutkan kata sandi yang
+                diinginkannya.
+              </span>
+            </span>
+          </label>
+
+          {ownPassword && (
+            <div className="field" style={{ marginTop: 'var(--sp-sm)' }}>
+              <label htmlFor="ck-password">Kata sandi</label>
+              <div style={{ display: 'flex', gap: 'var(--sp-sm)' }}>
+                <input
+                  id="ck-password"
+                  // Ditampilkan apa adanya bila diminta: pengurus sistem
+                  // memang harus membacanya untuk diteruskan, dan menutupinya
+                  // hanya membuat salah ketik tidak ketahuan.
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  minLength={MIN_PASSWORD}
+                  value={password}
+                  onChange={(e) => set('initialPassword', e.target.value)}
+                  style={{ flex: 1, minWidth: 0 }}
+                />
+                <button
+                  type="button"
+                  className="staff-btn staff-btn--ghost"
+                  style={{ width: 'auto' }}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((v) => !v)}
+                >
+                  {showPassword ? 'Sembunyikan' : 'Lihat'}
+                </button>
+              </div>
+              <p className="t-caption-sm">
+                Minimal {MIN_PASSWORD} karakter.
+                {password.length > 0 && password.length < MIN_PASSWORD
+                  ? ` Kurang ${MIN_PASSWORD - password.length} lagi.`
+                  : ''}
+              </p>
+            </div>
+          )}
+
+          <p className="t-caption-sm" style={{ marginTop: 'var(--sp-sm)' }}>
+            Apa pun pilihannya, kata sandi ditampilkan sekali setelah akun
+            dibuat agar bisa Anda teruskan — server hanya menyimpan hash-nya.
+          </p>
+        </fieldset>
 
         {error && <p className="form-error">{error}</p>}
 
@@ -201,3 +318,11 @@ export function CreateKopdesDialog({
     </div>
   );
 }
+
+const choiceStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 'var(--sp-md)',
+  alignItems: 'flex-start',
+  padding: 'var(--sp-sm) 0',
+  cursor: 'pointer',
+};

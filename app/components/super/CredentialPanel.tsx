@@ -22,7 +22,7 @@ export function CredentialPanel({
 
   const text =
     `Akun Admin Kopdes ${result.kopdes.name}\n` +
-    `Email: ${result.admin.email}\n` +
+    `Username (email): ${result.admin.email}\n` +
     `Kata sandi: ${result.initialPassword}\n\n` +
     `Silakan masuk dan segera ganti kata sandinya.`;
 
@@ -52,12 +52,26 @@ export function CredentialPanel({
         </div>
 
         <div className="staff-surface" style={{ background: 'var(--st-bg)' }}>
+          {/* Disebut "username" karena itu yang dicari pengurus saat masuk —
+              sistem ini tidak punya kolom username terpisah. */}
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--st-muted)' }}>
+            USERNAME
+          </p>
           <p className="staff-order__meta">
             <Mail size={12} aria-hidden="true" /> {result.admin.email}
           </p>
           <p
             style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'var(--st-muted)',
               marginTop: 'var(--sp-sm)',
+            }}
+          >
+            KATA SANDI
+          </p>
+          <p
+            style={{
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
               fontSize: 20,
               fontWeight: 700,

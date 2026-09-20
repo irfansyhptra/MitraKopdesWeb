@@ -365,8 +365,16 @@ export interface CreateKopdesDirectInput {
   latitude: number;
   longitude: number;
   contactName: string;
+  /** Sekaligus username-nya: sistem ini masuk dengan email. */
   contactEmail: string;
   contactPhone: string;
+  /**
+   * Kata sandi awal. Dikosongkan berarti sistem membuatkannya.
+   *
+   * Apa pun asalnya, nilainya hanya muncul sekali pada respons pembuatan —
+   * yang tersimpan di server hanya hash-nya.
+   */
+  initialPassword?: string;
 }
 
 /** Jumlah per koperasi — hanya jumlah, tanpa rincian transaksi apa pun. */
