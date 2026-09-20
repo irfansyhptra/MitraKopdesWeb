@@ -484,3 +484,11 @@
 .bottomnav a[data-accent='true'][aria-current='page'] .bottomnav__icon {
   background: var(--primary-active);
 }
+
+/* Slot aksi autentikasi sebelum keadaan sesi diketahui.
+   Lebar tetap supaya bilah atas tidak bergeser saat tombolnya muncul. */
+.authslot {
+  display: inline-block;
+  width: 84px;
+  height: 36px;
+}

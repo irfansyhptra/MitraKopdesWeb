@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { useSession } from '@/lib/useSession';
 import {
   ClipboardList,
   House,
@@ -100,9 +101,7 @@ export function AppShell({
                 </span>
               )}
             </Link>
-            <Link href="/login" className="kc-btn kc-btn--primary">
-              Masuk
-            </Link>
+            <AuthAction />
           </div>
         </div>
       </header>
@@ -125,5 +124,36 @@ export function AppShell({
         ))}
       </nav>
     </div>
+  );
+}
+
+/**
+ * Tombol "Masuk" hanya untuk yang belum masuk.
+ *
+ * Selama keadaan sesi belum diketahui — render di server, dan sesaat sebelum
+ * hidrasi — slotnya dibiarkan kosong dengan lebar tetap. Menebak "belum
+ * masuk" membuat tombol Masuk berkedip muncul lalu hilang bagi orang yang
+ * sebenarnya sudah masuk, dan menebak sebaliknya menyembunyikan satu-satunya
+ * jalan masuk bagi tamu.
+ */
+function AuthAction() {
+  const signedIn = useSession();
+
+  if (signedIn === null) {
+    return <span className="authslot" aria-hidden="true" />;
+  }
+
+  if (signedIn) {
+    return (
+      <Link href="/profile" className="kc-btn kc-btn--secondary">
+        Akun Saya
+      </Link>
+    );
+  }
+
+  return (
+    <Link href="/login" className="kc-btn kc-btn--primary">
+      Masuk
+    </Link>
   );
 }
