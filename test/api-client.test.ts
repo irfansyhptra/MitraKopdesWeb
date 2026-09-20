@@ -86,31 +86,41 @@ describe('aiChat', () => {
   });
 });
 
-describe('staff product upload', () => {
+describe('penyimpanan barang', () => {
   const product = {
     name: 'Beras', description: 'Beras 5 kg', categoryId: 'beras', price: 70000,
     stock: 10, minStock: 5, unit: 'pcs', isActive: false, isPreOrderAllowed: false,
   };
 
-  it('lets the browser set the multipart boundary and keeps disabled flags', async () => {
+  it('mengirim JSON, bukan multipart — berkas tidak lagi melewati server', async () => {
     const fetchMock = withFetch(201, { success: true, data: { id: 'p1' } });
-    const photo = new File(['image'], 'beras.png', { type: 'image/png' });
-    await client().saveStaffProduct(product, [photo]);
+    await client().saveStaffProduct({
+      ...product,
+      imageUrls: ['https://res.cloudinary.com/x/a.jpg'],
+    });
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('https://contoh.test/api/v1/products');
-    expect(init.headers['Content-Type']).toBeUndefined();
-    expect(init.body).toBeInstanceOf(FormData);
-    expect(init.body.get('isActive')).toBe('false');
-    expect(init.body.get('isPreOrderAllowed')).toBe('false');
-    expect(init.body.getAll('images')).toHaveLength(1);
+    expect(init.method).toBe('POST');
+    expect(init.body).not.toBeInstanceOf(FormData);
+    expect(JSON.parse(init.body).imageUrls).toEqual([
+      'https://res.cloudinary.com/x/a.jpg',
+    ]);
   });
 
-  it('uses PUT with JSON when editing a product without new images', async () => {
+  it('flag bernilai false tetap terkirim, bukan hilang', async () => {
+    const fetchMock = withFetch(201, { success: true, data: { id: 'p1' } });
+    await client().saveStaffProduct(product);
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    // `false` yang hilang membuat barang nonaktif diam-diam tayang.
+    expect(sent.isActive).toBe(false);
+    expect(sent.isPreOrderAllowed).toBe(false);
+  });
+
+  it('menyunting memakai PUT ke id barangnya', async () => {
     const fetchMock = withFetch(200, { success: true, data: { id: 'p1' } });
-    await client().saveStaffProduct(product, [], 'p1');
+    await client().saveStaffProduct(product, 'p1');
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('https://contoh.test/api/v1/products/p1');
     expect(init.method).toBe('PUT');
-    expect(JSON.parse(init.body)).toEqual(product);
   });
 });

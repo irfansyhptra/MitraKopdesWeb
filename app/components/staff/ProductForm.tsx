@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { uploadImages } from '@/lib/cloudinary';
 import { useAsync } from './useAsync';
 import { StaffAccess, StaffPageHeader } from './StaffPage';
 import { StaffError, StaffSkeleton } from './Section';
@@ -28,6 +29,10 @@ function ProductEditor({ product }: { product: Product | null }) {
   const [preorder, setPreorder] = useState(product?.isPreOrderAllowed ?? false);
   const [active, setActive] = useState(product?.isActive ?? true);
   const [busy, setBusy] = useState(false);
+  // Tahap ditampilkan terpisah: mengunggah lima gambar lewat jaringan desa
+  // bisa memakan puluhan detik, dan tombol yang hanya bertuliskan "Menyimpan…"
+  // membuat pegawai mengira aplikasinya menggantung.
+  const [stage, setStage] = useState<'idle' | 'uploading' | 'saving'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   useEffect(() => {
@@ -47,15 +52,24 @@ function ProductEditor({ product }: { product: Product | null }) {
     if (discount !== undefined && discount >= price) { setError('Harga diskon harus lebih kecil dari harga normal.'); return; }
     setBusy(true); setError(null);
     try {
+      // Gambar diunggah lebih dulu, langsung dari peramban ke Cloudinary.
+      // Kalau tahap ini gagal, produknya tidak jadi dibuat sama sekali —
+      // sebelumnya produk telanjur tersimpan tanpa gambar dan pegawai
+      // melihat "gagal" padahal barangnya sudah masuk katalog.
+      setStage('uploading');
+      const imageUrls = await uploadImages(files);
+
+      setStage('saving');
       await api.saveStaffProduct({
         name: text('name'), description: text('description'), categoryId: text('categoryId'),
         price, discountPrice: discount, stock: Number(text('stock')), minStock: Number(text('minStock')),
         unit: text('unit') || 'pcs', sku: text('sku'), isActive: active, isPreOrderAllowed: preorder,
         ...(preorder && text('availableAt') ? { preOrderAvailableAt: new Date(text('availableAt')).toISOString() } : {}),
-      }, files, product?.id);
+        ...(imageUrls.length ? { imageUrls } : {}),
+      }, product?.id);
       setSaved(true);
     } catch (e) { setError((e as Error).message); }
-    finally { setBusy(false); }
+    finally { setBusy(false); setStage('idle'); }
   }
 
   if (saved) return <section className="staff-surface staff-saved" role="status">
@@ -111,6 +125,6 @@ function ProductEditor({ product }: { product: Product | null }) {
       <label className="staff-switch"><span><strong>Produk Aktif</strong><small>Tampilkan produk di etalase koperasi.</small></span><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /></label>
     </fieldset>
     {error && <p role="alert" className="form-error">{error}</p>}
-    <button className="staff-btn staff-save" type="submit" disabled={busy || categories.loading || !!categories.error}>{busy ? 'Menyimpan…' : product ? 'Simpan Perubahan' : 'Simpan Produk'}</button>
+    <button className="staff-btn staff-save" type="submit" disabled={busy || categories.loading || !!categories.error}>{stage === 'uploading' ? `Mengunggah ${files.length} gambar…` : stage === 'saving' ? 'Menyimpan…' : product ? 'Simpan Perubahan' : 'Simpan Produk'}</button>
   </form>;
 }

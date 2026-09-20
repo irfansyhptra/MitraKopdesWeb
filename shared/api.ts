@@ -35,6 +35,7 @@ import type {
   Courier,
   DeliveryStatusWire,
   InventoryTransaction,
+  UploadSignature,
   ApprovalResult,
   CreateKopdesDirectInput,
   KopdesApplication,
@@ -121,20 +122,30 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
     getProducts: (params?: Record<string, string | number>) =>
       request<ProductListResult>(`/products${toQuery(params)}`),
     getProduct: (id: string) => request<Product>(`/products/${id}`),
-    saveStaffProduct: (payload: StaffProductInput, images: File[] = [], id?: string) => {
-      let body: BodyInit = JSON.stringify(payload);
-      if (images.length) {
-        const form = new FormData();
-        Object.entries(payload).forEach(([key, value]) => {
-          if (value !== undefined) form.append(key, String(value));
-        });
-        images.forEach((file) => form.append('images', file));
-        body = form;
-      }
-      return request<Product>(id ? `/products/${encodeURIComponent(id)}` : '/products', {
-        method: id ? 'PUT' : 'POST', body,
-      });
-    },
+    /**
+     * Tanda tangan unggahan Cloudinary.
+     *
+     * Rahasianya tinggal di backend; yang datang ke peramban hanya tanda
+     * tangan untuk satu unggahan. Endpoint-nya dijaga permission, jadi
+     * pelanggan biasa tidak bisa memakai kuota Cloudinary koperasi sebagai
+     * penyimpanan gratis.
+     */
+    getUploadSignature: () =>
+      request<UploadSignature>('/uploads/signature'),
+
+    /**
+     * Menyimpan barang. Gambar dikirim sebagai URL, bukan berkas.
+     *
+     * Berkasnya sudah diunggah klien langsung ke Cloudinary lebih dulu —
+     * melewatkannya lewat server akan menabrak batas badan permintaan 4,5 MB
+     * pada fungsi serverless Vercel, dan satu foto ponsel sering
+     * melampauinya.
+     */
+    saveStaffProduct: (payload: StaffProductInput, id?: string) =>
+      request<Product>(
+        id ? `/products/${encodeURIComponent(id)}` : '/products',
+        { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) },
+      ),
 
     // ── Keranjang (butuh autentikasi) ──
     getCart: async () => pick<Cart>(await rawRequest('/cart'), 'cart'),
@@ -592,5 +603,6 @@ export type {
   KopdesStats,
   SubmitApplicationInput,
   SuperAdminOverview,
+  UploadSignature,
 } from './types';
 export { Permissions, can } from './types';

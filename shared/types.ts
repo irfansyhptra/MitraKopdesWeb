@@ -107,6 +107,10 @@ export interface StaffProductInput {
   isActive: boolean;
   isPreOrderAllowed: boolean;
   preOrderAvailableAt?: string;
+  /** URL gambar yang sudah diunggah klien ke Cloudinary. */
+  imageUrls?: string[];
+  /** Saat menyunting: URL gambar lama yang dipertahankan. */
+  keepImageUrls?: string[];
 }
 
 export interface ProductListResult {
@@ -375,6 +379,15 @@ export interface CreateKopdesDirectInput {
    * yang tersimpan di server hanya hash-nya.
    */
   initialPassword?: string;
+}
+
+/** Tanda tangan sekali pakai untuk unggahan langsung ke Cloudinary. */
+export interface UploadSignature {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  folder: string;
+  signature: string;
 }
 
 /** Jumlah per koperasi — hanya jumlah, tanpa rincian transaksi apa pun. */
