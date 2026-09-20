@@ -502,7 +502,13 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
       ),
     approveApplication: (
       id: string,
-      payload: { latitude: number; longitude: number; reviewNote?: string },
+      payload: {
+        latitude: number;
+        longitude: number;
+        reviewNote?: string;
+        /** Dikosongkan berarti sistem membuatkannya. Muncul sekali saja. */
+        initialPassword?: string;
+      },
     ) =>
       request<ApprovalResult>(`/super-admin/applications/${id}/approve`, {
         method: 'PATCH',

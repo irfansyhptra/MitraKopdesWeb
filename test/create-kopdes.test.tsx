@@ -101,3 +101,30 @@ describe('form buat koperasi langsung', () => {
     expect(screen.getByRole('button', { name: 'Buat Koperasi & Akun' })).toBeDisabled();
   });
 });
+
+/**
+ * Aturan kata sandi hidup di satu komponen bersama, jadi ia diuji sekali
+ * sebagai unit — bukan diulang untuk tiap formulir yang memakainya.
+ */
+describe('aturan kata sandi bersama', () => {
+  it('mode otomatis tidak menghasilkan field apa pun', async () => {
+    const { passwordPayload } = await import('@/components/super/PasswordChoice');
+    expect(passwordPayload(false, '')).toEqual({});
+    // Bahkan bila kolomnya sempat terisi lalu pengguna berpindah ke otomatis.
+    expect(passwordPayload(false, 'terlanjurdiketik')).toEqual({});
+  });
+
+  it('mode manual mengirim apa adanya', async () => {
+    const { passwordPayload } = await import('@/components/super/PasswordChoice');
+    expect(passwordPayload(true, 'rahasiaku123')).toEqual({
+      initialPassword: 'rahasiaku123',
+    });
+  });
+
+  it('panjang minimum hanya berlaku pada mode manual', async () => {
+    const { isPasswordValid } = await import('@/components/super/PasswordChoice');
+    expect(isPasswordValid(false, '')).toBe(true);
+    expect(isPasswordValid(true, 'pendek')).toBe(false);
+    expect(isPasswordValid(true, 'delapan8')).toBe(true);
+  });
+});

@@ -11,6 +11,11 @@ import type {
 } from '@shared/api';
 import { Building2, Check, Mail, MapPin, Phone, Trash2 } from '@shared/design/icons';
 import { CredentialPanel } from '@/components/super/CredentialPanel';
+import {
+  isPasswordValid,
+  PasswordChoice,
+  passwordPayload,
+} from '@/components/super/PasswordChoice';
 
 /**
  * Kotak masuk pengajuan koperasi.
@@ -112,6 +117,8 @@ function ApplicationCard({
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [note, setNote] = useState('');
+  const [ownPassword, setOwnPassword] = useState(false);
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -126,6 +133,7 @@ function ApplicationCard({
           latitude: Number(lat),
           longitude: Number(lng),
           ...(note.trim() ? { reviewNote: note.trim() } : {}),
+          ...passwordPayload(ownPassword, password),
         }),
       );
     } catch (e) {
@@ -147,11 +155,17 @@ function ApplicationCard({
     }
   }
 
+  // Rentangnya ikut diperiksa: 95 sebagai latitude adalah kekeliruan yang
+  // mudah terjadi karena tertukar dengan longitude Aceh.
   const coordsValid =
+    lat.trim() !== '' &&
+    lng.trim() !== '' &&
     Number.isFinite(Number(lat)) &&
     Number.isFinite(Number(lng)) &&
-    lat.trim() !== '' &&
-    lng.trim() !== '';
+    Math.abs(Number(lat)) <= 90 &&
+    Math.abs(Number(lng)) <= 180;
+
+  const canApprove = coordsValid && isPasswordValid(ownPassword, password);
 
   return (
     <div className="staff-surface stack-md">
@@ -259,12 +273,20 @@ function ApplicationCard({
               onChange={(e) => setNote(e.target.value)}
             />
           </div>
+
+          <PasswordChoice
+            idPrefix={`app-${app.id}`}
+            own={ownPassword}
+            value={password}
+            onOwnChange={setOwnPassword}
+            onValueChange={setPassword}
+          />
           <div style={{ display: 'flex', gap: 'var(--sp-sm)' }}>
             <button
               type="button"
               className="staff-btn"
               style={{ width: 'auto' }}
-              disabled={!coordsValid || busy}
+              disabled={!canApprove || busy}
               onClick={() => void approve()}
             >
               {busy ? 'Membuat akun…' : 'Buat Koperasi & Akun'}
