@@ -39,28 +39,18 @@ export default async function HomePage() {
   const [bestSellers, featured, categories] = await Promise.all([
     safe(
       publicApi
-        .getMarketplaceProducts({ sellerType: 'all', sort: 'relevance' }, 1, 8)
+        .getMarketplaceProducts({ sellerType: 'ALL', sort: 'newest' }, 1, 8)
         .then((r) => r.items),
       [] as MarketplaceProduct[],
     ),
     safe(
       publicApi
-        .getMarketplaceProducts({ sellerType: 'umkm', sort: 'rating' }, 1, 8)
+        .getMarketplaceProducts({ sellerType: 'UMKM', sort: 'newest' }, 1, 8)
         .then((r) => r.items),
       [] as MarketplaceProduct[],
     ),
     safe(publicApi.getCategories(), [] as Category[]),
   ]);
-
-  // "Promo Terbaik" diambil dari produk yang memang punya harga diskon.
-  // Versi mobile memakai empat produk contoh yang ditulis tetap di dalam kode
-  // ("Beras Premium", gambar picsum) — itu etalase yang tidak bisa dibeli,
-  // jadi di sini seksinya hilang kalau tidak ada diskon sungguhan.
-  const promos = [...bestSellers, ...featured].filter((p) => {
-    const price = toRupiah(p.price);
-    const cut = p.discountPrice ? toRupiah(p.discountPrice) : 0;
-    return cut > 0 && cut < price;
-  });
 
   const empty = bestSellers.length === 0 && featured.length === 0;
 
@@ -108,27 +98,12 @@ export default async function HomePage() {
         />
       )}
 
-      {promos.length > 0 && (
-        <section>
-          <SectionHeader
-            title="Promo Terbaik"
-            actionLabel="Semua"
-            href="/marketplace"
-          />
-          <div className="kc-rail kc-rail--wrap">
-            {promos.slice(0, 8).map((product) => (
-              <PromoTile key={product.id} product={product} />
-            ))}
-          </div>
-        </section>
-      )}
-
       {featured.length > 0 && (
         <section>
           <SectionHeader
             title="Produk UMKM Pilihan"
             actionLabel="Semua"
-            href="/marketplace?sellerType=umkm"
+            href="/marketplace?sellerType=UMKM"
           />
           <div className="kc-rail kc-rail--wrap">
             {featured.slice(0, 6).map((product) => (
@@ -194,10 +169,9 @@ function hrefFor(product: MarketplaceProduct): string {
 
 /** Kartu ringkas untuk rail mendatar — padanan `AppleProductTile`. */
 function PromoTile({ product }: { product: MarketplaceProduct }) {
+  // Endpoint katalog tidak mengirim harga diskon; harga coret hanya ada di
+  // halaman detail, yang membacanya dari produknya langsung.
   const price = toRupiah(product.price);
-  const cut = product.discountPrice ? toRupiah(product.discountPrice) : 0;
-  const hasDiscount = cut > 0 && cut < price;
-  const off = hasDiscount ? Math.round(((price - cut) / price) * 100) : 0;
 
   return (
     <Link href={hrefFor(product)} className="kc-promo kc-card--tap">
@@ -208,20 +182,12 @@ function PromoTile({ product }: { product: MarketplaceProduct }) {
         ) : (
           <Package size={30} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
         )}
-        {off > 0 && <span className="kc-promo__badge">-{off}%</span>}
+
       </div>
       <div className="kc-promo__body">
         <p className="kc-promo__name">{product.name}</p>
         <p className="kc-promo__sub">{product.sellerName}</p>
-        <p className="kc-promo__price">
-          {formatRupiah(hasDiscount ? cut : price)}
-          {hasDiscount && (
-            <>
-              {' '}
-              <span className="kc-product__strike">{formatRupiah(price)}</span>
-            </>
-          )}
-        </p>
+        <p className="kc-promo__price">{formatRupiah(price)}</p>
       </div>
     </Link>
   );
@@ -229,8 +195,6 @@ function PromoTile({ product }: { product: MarketplaceProduct }) {
 
 function ProductCard({ product }: { product: MarketplaceProduct }) {
   const price = toRupiah(product.price);
-  const cut = product.discountPrice ? toRupiah(product.discountPrice) : 0;
-  const hasDiscount = cut > 0 && cut < price;
 
   return (
     <Link href={hrefFor(product)} className="kc-product kc-card--tap">
@@ -245,9 +209,7 @@ function ProductCard({ product }: { product: MarketplaceProduct }) {
       <div className="kc-product__body">
         <p className="kc-product__name">{product.name}</p>
         <p className="kc-product__seller">{product.sellerName}</p>
-        <p className="kc-product__price">
-          {formatRupiah(hasDiscount ? cut : price)}
-        </p>
+        <p className="kc-product__price">{formatRupiah(price)}</p>
       </div>
     </Link>
   );

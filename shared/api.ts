@@ -62,6 +62,49 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Satu baris katalog seperti yang benar-benar dikirim backend
+ * (`MergedProduct` di `marketplace.service.ts`).
+ *
+ * Ditulis terpisah dari `MarketplaceProduct` supaya perbedaannya kelihatan:
+ * di kawat namanya `source`, dan `rating` adalah objek, bukan angka.
+ */
+interface WireProduct {
+  id: string;
+  name: string;
+  price: number | string;
+  stock: number;
+  imageUrl?: string | null;
+  categoryId?: string;
+  categoryName?: string | null;
+  sellerId?: string | null;
+  sellerName?: string | null;
+  source?: 'KOPDES' | 'UMKM';
+  rating?: { average: number | null; count: number } | null;
+  distanceLabel?: string | null;
+}
+
+function toMarketplaceProduct(p: WireProduct): MarketplaceProduct {
+  return {
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    stock: p.stock,
+    // Produk tanpa `source` diperlakukan sebagai milik Kopdes: itu jalur
+    // yang benar untuk endpoint produk biasa, dan menebak UMKM akan
+    // mengirim pembeli ke detail yang tidak ada.
+    sellerType: p.source ?? 'KOPDES',
+    sellerId: p.sellerId ?? null,
+    sellerName: p.sellerName ?? 'Kopdes',
+    imageUrl: p.imageUrl ?? null,
+    categoryId: p.categoryId,
+    categoryName: p.categoryName ?? null,
+    // Null berarti belum ada ulasan — bukan nol bintang.
+    rating: p.rating ?? { average: null, count: 0 },
+    distanceLabel: p.distanceLabel ?? null,
+  };
+}
+
 /** Respons JSON backend apa adanya; bentuk tiap endpoint dibaca lewat `pick()`. */
 type JsonBody = Record<string, unknown> | null;
 
@@ -281,8 +324,8 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
         `/marketplace/products${toQuery({
           page,
           limit,
-          sellerType: filter.sellerType ?? 'all',
-          sort: filter.sort ?? 'relevance',
+          sellerType: filter.sellerType ?? 'ALL',
+          sort: filter.sort ?? 'newest',
           ...(filter.search ? { search: filter.search } : {}),
           ...(filter.categoryId ? { categoryId: filter.categoryId } : {}),
           ...(filter.minPrice != null ? { minPrice: filter.minPrice } : {}),
@@ -292,7 +335,11 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
       );
       const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
       return {
-        items: (data.products ?? []) as MarketplaceProduct[],
+        // Backend menamai jenis penjualnya `source`; seluruh layar memakai
+        // `sellerType`. Pemetaannya sekali di sini, bukan di tiap kartu —
+        // satu layar yang lupa melakukannya akan menautkan produk mitra ke
+        // halaman produk Kopdes dan berakhir 404.
+        items: ((data.products ?? []) as WireProduct[]).map(toMarketplaceProduct),
         meta: {
           total: data.total ?? 0,
           page: data.page ?? page,

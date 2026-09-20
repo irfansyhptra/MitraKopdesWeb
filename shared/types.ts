@@ -185,26 +185,47 @@ export interface Paginated<T> {
 
 // ── Marketplace (GET /marketplace/products) ──
 
-export type MarketplaceSellerType = 'all' | 'kopdes' | 'umkm';
+/**
+ * Nilai-nilai ini kembar persis dengan `MarketplaceQueryDto` di backend.
+ *
+ * Sebelumnya klien memakai kosakatanya sendiri — 'all' huruf kecil dan
+ * 'relevance' yang tidak pernah ada di server — sehingga setiap permintaan
+ * katalog dijawab 400 dan beranda tampil kosong tanpa pesan apa pun.
+ * Menyamakan kosakatanya menghapus tabel terjemahan yang bisa melenceng lagi.
+ */
+export type MarketplaceSellerType = 'ALL' | 'KOPDES' | 'UMKM';
 export type MarketplaceSort =
-  | 'relevance'
+  | 'newest'
   | 'price_asc'
   | 'price_desc'
-  | 'rating'
   | 'distance';
 
+/** Ringkasan ulasan; backend mengirimnya sebagai objek, bukan satu angka. */
+export interface RatingSummary {
+  /** Null berarti belum ada ulasan — bukan nol bintang. */
+  average: number | null;
+  count: number;
+}
+
+/**
+ * Satu baris katalog.
+ *
+ * Bentuknya mengikuti `MergedProduct` di backend. Catatan yang mudah
+ * terlewat: di sana namanya `source`, bukan `sellerType` — klien
+ * memetakannya sekali di `getMarketplaceProducts`, bukan di tiap layar.
+ */
 export interface MarketplaceProduct {
   id: string;
   name: string;
   price: number | string;
-  discountPrice?: number | string | null;
   stock: number;
-  unit?: string;
   sellerType: 'KOPDES' | 'UMKM';
+  sellerId?: string | null;
   sellerName: string;
   imageUrl?: string | null;
-  rating?: number | null;
-  reviewCount?: number;
+  categoryId?: string;
+  categoryName?: string | null;
+  rating: RatingSummary;
   distanceLabel?: string | null;
 }
 

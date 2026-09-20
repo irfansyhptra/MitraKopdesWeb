@@ -43,16 +43,23 @@ import type {
  */
 
 const SELLER_TABS: { id: MarketplaceSellerType; label: string }[] = [
-  { id: 'all', label: 'Semua' },
-  { id: 'kopdes', label: 'Barang Kopdes' },
-  { id: 'umkm', label: 'Mitra UMKM' },
+  { id: 'ALL', label: 'Semua' },
+  { id: 'KOPDES', label: 'Barang Kopdes' },
+  { id: 'UMKM', label: 'Mitra UMKM' },
 ];
 
+/**
+ * Hanya urutan yang benar-benar didukung backend.
+ *
+ * "Paling Sesuai" dan "Rating" dulu ada di sini padahal server tidak
+ * mengenal keduanya — memilihnya membuat seluruh katalog dijawab 400.
+ * Urutan menurut rating belum ada; menampilkan tombolnya berarti
+ * menjanjikan sesuatu yang tidak dikerjakan.
+ */
 const SORTS: { id: MarketplaceSort; label: string }[] = [
-  { id: 'relevance', label: 'Paling Sesuai' },
+  { id: 'newest', label: 'Terbaru' },
   { id: 'price_asc', label: 'Termurah' },
   { id: 'price_desc', label: 'Termahal' },
-  { id: 'rating', label: 'Rating' },
 ];
 
 const PAGE_SIZE = 20;
@@ -72,8 +79,8 @@ function MarketplaceBrowser() {
   const initialQuery = params?.get('q') ?? '';
 
   const [filter, setFilter] = useState<MarketplaceFilter>(() => ({
-    sellerType: (params?.get('sellerType') as MarketplaceSellerType) ?? 'all',
-    sort: 'relevance',
+    sellerType: (params?.get('sellerType') as MarketplaceSellerType) ?? 'ALL',
+    sort: 'newest',
     categoryId: params?.get('categoryId') ?? undefined,
     search: initialQuery || undefined,
   }));
@@ -330,9 +337,9 @@ function CategoryRow({
 }
 
 function ProductCard({ product }: { product: MarketplaceProduct }) {
+  // Endpoint katalog tidak mengirim harga diskon; harga coret hanya muncul
+  // di halaman detail, yang memang membacanya dari produknya langsung.
   const price = toRupiah(product.price);
-  const discount = product.discountPrice ? toRupiah(product.discountPrice) : 0;
-  const hasDiscount = discount > 0 && discount < price;
   const outOfStock = product.stock <= 0;
 
   const href =
@@ -361,26 +368,20 @@ function ProductCard({ product }: { product: MarketplaceProduct }) {
         </div>
         <p className="kc-product__name">{product.name}</p>
         <p className="kc-product__seller">{product.sellerName}</p>
-        {product.rating != null && product.rating > 0 && (
+        {/* Rata-rata null berarti belum ada ulasan — bukan nol bintang,
+            jadi barisnya tidak digambar sama sekali. */}
+        {product.rating.average != null && (
           <p className="kc-product__seller">
             <Star
               size={12}
               aria-hidden="true"
               style={{ color: 'var(--yellow-accent)', fill: 'currentColor' }}
             />{' '}
-            {product.rating.toFixed(1)}
-            {product.reviewCount ? ` (${product.reviewCount})` : ''}
+            {product.rating.average.toFixed(1)}
+            {product.rating.count ? ` (${product.rating.count})` : ''}
           </p>
         )}
-        <p className="kc-product__price">
-          {formatRupiah(hasDiscount ? discount : price)}
-          {hasDiscount && (
-            <>
-              {' '}
-              <span className="kc-product__strike">{formatRupiah(price)}</span>
-            </>
-          )}
-        </p>
+        <p className="kc-product__price">{formatRupiah(price)}</p>
       </div>
     </Link>
   );
