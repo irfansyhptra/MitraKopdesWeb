@@ -1292,3 +1292,314 @@ svg.lucide {
   /* Kolom ikon-di-atas-label: ikonnya tidak boleh ikut melar. */
   line-height: 1.2;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Pembayaran. Tampilan sendiri, bukan halaman bawaan gateway — karena itu
+   seluruh kartu di bawah memakai token yang sama dengan sisa aplikasi.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Pemilihan metode ─────────────────────────────────────────────────── */
+.kc-method {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  width: 100%;
+  padding: var(--sp-md) var(--sp-base);
+  text-align: left;
+  border-radius: var(--r-button);
+  border: 1px solid var(--hairline-soft);
+  background: var(--canvas);
+  transition:
+    border-color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease);
+}
+
+.kc-method:hover:not(:disabled) {
+  border-color: var(--primary-soft);
+}
+
+.kc-method[aria-checked='true'] {
+  border-color: var(--primary);
+  background: var(--primary-tint);
+}
+
+/* Metode yang belum tersedia tetap terlihat, tapi jelas tidak bisa dipilih:
+   menghilangkannya membuat pengguna mencari-cari metode yang ia tahu ada. */
+.kc-method:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kc-method__logo {
+  width: 44px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-xs);
+  background: var(--method-tint, var(--surface-strong));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.kc-method__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kc-method__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.kc-method__desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+/* Penanda pilihan: lingkaran, bukan hanya warna latar — warna saja tidak
+   terbaca pengguna yang buta warna. */
+.kc-method__radio {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid var(--hairline);
+  display: grid;
+  place-items: center;
+}
+
+.kc-method[aria-checked='true'] .kc-method__radio {
+  border-color: var(--primary);
+}
+
+.kc-method[aria-checked='true'] .kc-method__radio::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+/* ── Kartu instruksi pembayaran ───────────────────────────────────────── */
+.kc-pay {
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+.kc-pay__head {
+  text-align: center;
+  padding: var(--sp-lg) var(--sp-base) var(--sp-base);
+}
+
+.kc-pay__brand {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto var(--sp-md);
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--dark-red), var(--bright-red));
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.kc-pay__amount {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.kc-pay__ref {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: var(--sp-xs);
+}
+
+/* ── Hitung mundur ────────────────────────────────────────────────────── */
+.kc-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: var(--surface-strong);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sepuluh menit terakhir diberi warna mendesak DAN kata "tersisa" tetap
+   ditulis — perubahan warna saja bukan pemberitahuan. */
+.kc-countdown--urgent {
+  background: var(--primary-tint);
+  color: var(--primary-active);
+}
+
+.kc-countdown--done {
+  background: var(--surface-strong);
+  color: var(--muted);
+}
+
+/* ── QR ───────────────────────────────────────────────────────────────── */
+.kc-qr {
+  width: min(260px, 72vw);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  padding: var(--sp-md);
+  border-radius: var(--r-card);
+  background: #fff;
+  border: 1px solid var(--hairline-soft);
+  display: grid;
+  place-items: center;
+}
+
+.kc-qr img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* Rendering tajam: QR yang dihaluskan bisa gagal dipindai pada layar
+     berkerapatan rendah. */
+  image-rendering: pixelated;
+}
+
+/* ── Baris yang bisa disalin ──────────────────────────────────────────── */
+.kc-copy {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-md) var(--sp-base);
+  border-radius: var(--r-button);
+  background: var(--surface-soft);
+  border: 1px solid var(--hairline-soft);
+}
+
+.kc-copy__label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+}
+
+.kc-copy__value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.5px;
+  word-break: break-all;
+  margin-top: 2px;
+}
+
+.kc-copy__btn {
+  flex: none;
+  min-height: 36px;
+  padding: 0 var(--sp-md);
+  border-radius: var(--r-button);
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kc-copy__btn[data-copied='true'] {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+/* ── Langkah instruksi ────────────────────────────────────────────────── */
+.kc-steps {
+  counter-reset: step;
+  display: grid;
+  gap: var(--sp-sm);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.kc-steps li {
+  counter-increment: step;
+  display: flex;
+  gap: var(--sp-md);
+  font-size: 13px;
+  color: var(--body);
+  line-height: 1.45;
+}
+
+.kc-steps li::before {
+  content: counter(step);
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary-tint);
+  color: var(--primary-active);
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+/* ── Status pembayaran ────────────────────────────────────────────────── */
+.kc-paystatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--status-bg, var(--surface-strong));
+  color: var(--status-fg, var(--body));
+}
+
+.kc-paystatus__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Denyut halus hanya saat menunggu; animasi yang terus berjalan pada status
+   akhir hanya membuat halaman terlihat belum selesai memuat. */
+.kc-paystatus--waiting .kc-paystatus__dot {
+  animation: kc-pulse 1.6s var(--ease) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kc-paystatus--waiting .kc-paystatus__dot {
+    animation: none;
+  }
+}
+
+/* ── Ringkasan per penjual di checkout ────────────────────────────────── */
+.kc-sellergroup {
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+.kc-sellergroup__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-md) var(--sp-base);
+  background: var(--surface-soft);
+  border-bottom: 1px solid var(--hairline-soft);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}

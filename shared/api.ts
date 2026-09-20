@@ -35,6 +35,8 @@ import type {
   Courier,
   DeliveryStatusWire,
   InventoryTransaction,
+  PaymentMethodCode,
+  PaymentSnapshot,
   ApprovalResult,
   CreateKopdesDirectInput,
   KopdesApplication,
@@ -543,6 +545,24 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
         method: 'DELETE',
       }),
 
+    // ── Pembayaran ──
+    // Yang dikirim hanya id pesanan dan metode. Nominal, diskon, dan total
+    // dihitung ulang backend dari database; mengirimnya dari sini berarti
+    // mengirim angka yang bisa diubah siapa pun lewat DevTools.
+    createPayment: (orderId: string, paymentMethod: PaymentMethodCode) =>
+      request<PaymentSnapshot>('/payments/create', {
+        method: 'POST',
+        body: JSON.stringify({ orderId, paymentMethod }),
+      }),
+    getPayment: (orderId: string) =>
+      request<PaymentSnapshot>(`/payments/${encodeURIComponent(orderId)}`),
+    /** Menanyakan status langsung ke Midtrans; jaring pengaman bila webhook telat. */
+    checkPaymentStatus: (orderId: string) =>
+      request<PaymentSnapshot>(
+        `/payments/${encodeURIComponent(orderId)}/check-status`,
+        { method: 'POST' },
+      ),
+
     // ── Pengajuan koperasi (publik) ──
     // Tanpa token: koperasi yang belum bergabung belum punya akun.
     submitKopdesApplication: (payload: SubmitApplicationInput) =>
@@ -612,6 +632,10 @@ export type ApiClient = ReturnType<typeof createApiClient>;
 export type {
   Address,
   AssignableRole,
+  PaymentAction,
+  PaymentMethodCode,
+  PaymentSnapshot,
+  PaymentView,
   ApiResponse,
   AuthResult,
   Cart,

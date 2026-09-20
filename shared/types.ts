@@ -319,6 +319,70 @@ export interface InventoryTransaction {
   user?: { id: string; name: string } | null;
 }
 
+// ── Pembayaran (Midtrans Core API) ──
+
+/**
+ * Metode yang benar-benar didukung backend dan aktif di akun merchant.
+ *
+ * Nilainya kembar dengan `PAYMENT_METHODS` di backend. Metode yang belum
+ * terintegrasi sengaja tidak ada di sini — pilihan yang pasti gagal saat
+ * ditekan lebih buruk daripada pilihan yang tidak ditawarkan.
+ */
+export type PaymentMethodCode =
+  | 'QRIS'
+  | 'GOPAY'
+  | 'SHOPEEPAY'
+  | 'BCA_VA'
+  | 'BNI_VA'
+  | 'BRI_VA'
+  | 'PERMATA_VA'
+  | 'MANDIRI_BILL';
+
+/** Status yang dibaca pembeli; lebih halus daripada enum PaymentStatus. */
+export type PaymentView =
+  | 'PENDING'
+  | 'PAID'
+  | 'DENIED'
+  | 'CANCELLED'
+  | 'EXPIRED'
+  | 'FAILED'
+  | 'REFUNDED';
+
+export interface PaymentAction {
+  name: string;
+  method: string;
+  url: string;
+}
+
+/**
+ * Bentuk yang sama untuk semua metode.
+ *
+ * Backend yang menormalkan respons Midtrans — QRIS lewat `actions`, VA bank
+ * lewat `va_numbers`, Permata lewat field tersendiri, Mandiri lewat
+ * `bill_key`. Layar hanya membaca field yang relevan bagi metodenya.
+ */
+export interface PaymentSnapshot {
+  orderId: string;
+  method: PaymentMethodCode | string;
+  status: PaymentView;
+  midtransOrderId: string | null;
+  transactionId: string | null;
+  paymentType: string | null;
+  transactionStatus: string | null;
+  fraudStatus: string | null;
+  grossAmount: number;
+  /** ISO dari server. Hitung mundur memakai ini, bukan waktu buatan klien. */
+  expiryTime: string | null;
+  vaNumber: string | null;
+  bank: string | null;
+  billKey: string | null;
+  billerCode: string | null;
+  qrCodeUrl: string | null;
+  deeplinkUrl: string | null;
+  actions: PaymentAction[];
+  paidAt: string | null;
+}
+
 // ── Pengajuan koperasi & pemantauan (Super Admin) ──
 
 export type KopdesApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';

@@ -30,6 +30,12 @@ export {
   X,
   ImagePlus,
   Check,
+  Copy,
+  Download,
+  Share2,
+  ExternalLink,
+  QrCode,
+  Landmark,
   Trash2,
   LogOut,
   // Identitas & status
