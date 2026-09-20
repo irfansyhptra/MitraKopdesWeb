@@ -85,3 +85,32 @@ describe('aiChat', () => {
     expect(JSON.parse(init.body)).toEqual({ message: 'produk termurah' });
   });
 });
+
+describe('staff product upload', () => {
+  const product = {
+    name: 'Beras', description: 'Beras 5 kg', categoryId: 'beras', price: 70000,
+    stock: 10, minStock: 5, unit: 'pcs', isActive: false, isPreOrderAllowed: false,
+  };
+
+  it('lets the browser set the multipart boundary and keeps disabled flags', async () => {
+    const fetchMock = withFetch(201, { success: true, data: { id: 'p1' } });
+    const photo = new File(['image'], 'beras.png', { type: 'image/png' });
+    await client().saveStaffProduct(product, [photo]);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://contoh.test/api/v1/products');
+    expect(init.headers['Content-Type']).toBeUndefined();
+    expect(init.body).toBeInstanceOf(FormData);
+    expect(init.body.get('isActive')).toBe('false');
+    expect(init.body.get('isPreOrderAllowed')).toBe('false');
+    expect(init.body.getAll('images')).toHaveLength(1);
+  });
+
+  it('uses PUT with JSON when editing a product without new images', async () => {
+    const fetchMock = withFetch(200, { success: true, data: { id: 'p1' } });
+    await client().saveStaffProduct(product, [], 'p1');
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://contoh.test/api/v1/products/p1');
+    expect(init.method).toBe('PUT');
+    expect(JSON.parse(init.body)).toEqual(product);
+  });
+});

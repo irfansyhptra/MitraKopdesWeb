@@ -56,6 +56,11 @@ export function AppShell({
 }) {
   const pathname = usePathname() ?? '/';
 
+  // Portal pegawai punya kerangkanya sendiri. Pegawai yang sedang memproses
+  // pesanan tidak sedang berbelanja, jadi navigasi pelanggan tidak ikut
+  // digambar di sana.
+  if (pathname.startsWith('/pegawai')) return <>{children}</>;
+
   return (
     <div className="shell">
       <header className="topbar">

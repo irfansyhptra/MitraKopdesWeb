@@ -31,6 +31,11 @@ import type {
   StoreStatus,
   TimelineEntry,
   User,
+  AdminDelivery,
+  Courier,
+  DeliveryStatusWire,
+  InventoryTransaction,
+  StaffProductInput,
 } from './types';
 
 export interface ApiClientOptions {
@@ -58,7 +63,7 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
     const res = await fetch(`${baseUrl}${path}`, {
       ...init,
       headers: {
-        'Content-Type': 'application/json',
+        ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(init.headers ?? {}),
       },
@@ -105,6 +110,20 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
     getProducts: (params?: Record<string, string | number>) =>
       request<ProductListResult>(`/products${toQuery(params)}`),
     getProduct: (id: string) => request<Product>(`/products/${id}`),
+    saveStaffProduct: (payload: StaffProductInput, images: File[] = [], id?: string) => {
+      let body: BodyInit = JSON.stringify(payload);
+      if (images.length) {
+        const form = new FormData();
+        Object.entries(payload).forEach(([key, value]) => {
+          if (value !== undefined) form.append(key, String(value));
+        });
+        images.forEach((file) => form.append('images', file));
+        body = form;
+      }
+      return request<Product>(id ? `/products/${encodeURIComponent(id)}` : '/products', {
+        method: id ? 'PUT' : 'POST', body,
+      });
+    },
 
     // ── Keranjang (butuh autentikasi) ──
     getCart: async () => pick<Cart>(await rawRequest('/cart'), 'cart'),
@@ -376,6 +395,70 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       }),
+
+    // ── Mutasi & penyesuaian stok ──
+    getStockTransactions: async (page = 1, limit = 20) => {
+      const body = await rawRequest(
+        `/admin/inventory/transactions${toQuery({ page, limit })}`,
+      );
+      return {
+        items: (body?.items ?? body?.data ?? []) as InventoryTransaction[],
+        meta: (body?.meta ?? {
+          total: 0,
+          page,
+          limit,
+          totalPages: 1,
+        }) as PageMeta,
+      };
+    },
+    adjustStock: (payload: {
+      productId?: string;
+      umkmProductId?: string;
+      type: 'IN' | 'OUT' | 'ADJUSTMENT';
+      quantity: number;
+      reason: string;
+    }) =>
+      request<unknown>('/admin/inventory/adjust', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    stockOpname: (payload: {
+      productId?: string;
+      umkmProductId?: string;
+      countedStock: number;
+      reason?: string;
+    }) =>
+      request<unknown>('/admin/inventory/opname', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    // ── Kurir & pengantaran ──
+    getCouriers: () => request<Courier[]>('/admin/couriers'),
+    getDeliveries: (status?: DeliveryStatusWire) =>
+      request<AdminDelivery[]>(
+        `/admin/deliveries${status ? toQuery({ status }) : ''}`,
+      ),
+    assignCourier: (deliveryId: string, courierId: string) =>
+      request<AdminDelivery>(`/admin/deliveries/${deliveryId}/assign`, {
+        method: 'PATCH',
+        body: JSON.stringify({ courierId }),
+      }),
+    unassignCourier: (deliveryId: string) =>
+      request<AdminDelivery>(`/admin/deliveries/${deliveryId}/unassign`, {
+        method: 'PATCH',
+      }),
+
+    // ── Asisten AI staf ──
+    // Endpoint terpisah dari `/ai/chat` dan dijaga `ai:assist`.
+    aiManagement: async (message: string) => {
+      const body = await rawRequest('/ai/management', {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      });
+      const text = body?.response ?? body?.data;
+      return typeof text === 'string' ? text : '';
+    },
   };
 }
 
@@ -410,5 +493,9 @@ export type {
   StoreStatus,
   TimelineEntry,
   User,
+  AdminDelivery,
+  Courier,
+  DeliveryStatusWire,
+  InventoryTransaction,
 } from './types';
 export { Permissions, can } from './types';

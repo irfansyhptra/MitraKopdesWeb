@@ -81,6 +81,28 @@ export interface Product {
   isActive: boolean;
   category?: { id: string; name: string };
   images?: ProductImage[];
+  categoryId?: string;
+  discountPrice?: number | string | null;
+  minStock?: number;
+  unit?: string;
+  sku?: string | null;
+  isPreOrderAllowed?: boolean;
+  preOrderAvailableAt?: string | null;
+}
+
+export interface StaffProductInput {
+  name: string;
+  description: string;
+  categoryId: string;
+  price: number;
+  stock: number;
+  minStock: number;
+  unit: string;
+  sku?: string;
+  discountPrice?: number;
+  isActive: boolean;
+  isPreOrderAllowed: boolean;
+  preOrderAvailableAt?: string;
 }
 
 export interface ProductListResult {
@@ -134,6 +156,14 @@ export interface Order {
     product?: CartLineProduct | null;
     umkmProduct?: CartLineProduct | null;
   }>;
+
+  /** Hanya dikirim pada daftar sisi staf (`GET /admin/orders`). */
+  customer?: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string | null;
+  } | null;
 }
 
 /** Metadata paginasi yang dikirim backend pada daftar berhalaman. */
@@ -251,6 +281,54 @@ export interface StockItem {
   unit: string;
   sku?: string | null;
   price: string;
+}
+
+export interface InventoryTransaction {
+  id: string;
+  type: 'IN' | 'OUT' | 'ADJUSTMENT';
+  quantity: number;
+  reason?: string | null;
+  createdAt: string;
+  product?: { id: string; name: string } | null;
+  umkmProduct?: { id: string; name: string } | null;
+  user?: { id: string; name: string } | null;
+}
+
+// ── Kurir & pengantaran (GET/PATCH /admin/*) ──
+
+export interface Courier {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  /** Pengantaran yang masih berjalan; dipakai untuk membagi beban. */
+  activeCount: number;
+}
+
+export type DeliveryStatusWire =
+  | 'ASSIGNED'
+  | 'ACCEPTED'
+  | 'PICKED_UP'
+  | 'IN_TRANSIT'
+  | 'COURIER_DELIVERED'
+  | 'CUSTOMER_CONFIRMED'
+  | 'COMPLETED';
+
+export interface AdminDelivery {
+  id: string;
+  status: DeliveryStatusWire;
+  createdAt: string;
+  courier?: { id: string; name: string; phone?: string | null } | null;
+  order?: {
+    id: string;
+    orderNumber?: string | null;
+    customer?: { id: string; name: string; phone?: string | null } | null;
+    deliveryAddress?: {
+      street: string;
+      city: string;
+      state: string;
+    } | null;
+  } | null;
 }
 
 // ── Ulasan (GET/POST /reviews) ──

@@ -8,6 +8,7 @@
 
 @import '../../shared/design/tokens.css';
 @import '../../shared/design/components.css';
+@import '../../shared/design/staff.css';
 
 /* ── Shell: bilah atas + navigasi bawah (padanan AppShell di Flutter) ── */
 
