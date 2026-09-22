@@ -130,3 +130,38 @@ describe('penyimpanan barang', () => {
     expect(init.method).toBe('PUT');
   });
 });
+
+/**
+ * Keranjang.
+ *
+ * Bug yang ditutup tes ini: `addToCart` dulu hanya menerima satu id dan
+ * selalu mengirimnya sebagai `productId`. Produk Mitra UMKM tinggal di tabel
+ * lain, jadi backend mencarinya di tabel Product dan menjawab 404 — barang
+ * mitra tidak pernah bisa masuk keranjang, tanpa pesan yang menjelaskan
+ * kenapa.
+ */
+describe('menambah ke keranjang', () => {
+  it('produk Kopdes dikirim sebagai productId', async () => {
+    const fetchMock = withFetch(200, { success: true, cart: { id: 'c1', items: [] } });
+    await client().addToCart({ productId: 'p1' }, 2);
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(sent).toEqual({ productId: 'p1', quantity: 2 });
+  });
+
+  it('produk mitra dikirim sebagai umkmProductId', async () => {
+    const fetchMock = withFetch(200, { success: true, cart: { id: 'c1', items: [] } });
+    await client().addToCart({ umkmProductId: 'u1' }, 1);
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(sent).toEqual({ umkmProductId: 'u1', quantity: 1 });
+    // Mengirim keduanya, atau mengirim id mitra sebagai productId, membuat
+    // backend menjawab 404.
+    expect(sent).not.toHaveProperty('productId');
+  });
+
+  it('membaca keranjang dari envelope `cart`, bukan `data`', async () => {
+    // Envelope backend tidak konsisten: keranjang memakai kunci `cart`.
+    withFetch(200, { success: true, cart: { id: 'c1', items: [{ id: 'i1' }] } });
+    const cart = await client().addToCart({ productId: 'p1' }, 1);
+    expect(cart.id).toBe('c1');
+  });
+});

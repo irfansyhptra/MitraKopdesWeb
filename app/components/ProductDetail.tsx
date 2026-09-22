@@ -67,15 +67,31 @@ export function ProductDetail({
   // pre-order tetap boleh dibeli, dan backend yang memutuskan itu.
   const canOrder = !outOfStock || !!product.isPreOrderAllowed;
 
+  const isUmkm = product.sellerKind === 'UMKM';
+
+  /**
+   * Halaman produk ini melayani dua sumber, dan keduanya punya rute serta
+   * tabelnya sendiri. Satu-satunya yang tahu bedanya adalah `sellerKind`,
+   * jadi ia yang dipakai — bukan asumsi bahwa semua produk milik Kopdes.
+   */
+  const detailPath = isUmkm
+    ? `/umkm-product/${product.id}`
+    : `/product/${product.id}`;
+
   async function addToCart() {
     if (!getToken()) {
-      router.push(`/login?next=/product/${product.id}`);
+      // Sebelumnya selalu menunjuk /product/, sehingga pembeli barang mitra
+      // dikembalikan ke halaman yang tidak ada setelah masuk.
+      router.push(`/login?next=${encodeURIComponent(detailPath)}`);
       return;
     }
     setAdding(true);
     setNotice(null);
     try {
-      await api.addToCart(product.id, quantity);
+      await api.addToCart(
+        isUmkm ? { umkmProductId: product.id } : { productId: product.id },
+        quantity,
+      );
       setNotice('Produk masuk ke keranjang.');
     } catch (e) {
       setNotice((e as Error).message);

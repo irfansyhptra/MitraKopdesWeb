@@ -198,11 +198,24 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
 
     // ── Keranjang (butuh autentikasi) ──
     getCart: async () => pick<Cart>(await rawRequest('/cart'), 'cart'),
-    addToCart: async (productId: string, quantity: number) =>
+    /**
+     * Menambah barang ke keranjang.
+     *
+     * Menerima `ref`, bukan satu id telanjang. Produk Kopdes dan produk
+     * Mitra UMKM tinggal di dua tabel berbeda, dan mengirim id produk UMKM
+     * sebagai `productId` membuat backend mencarinya di tabel Product lalu
+     * menjawab 404 — itulah sebabnya barang mitra tidak pernah masuk
+     * keranjang. Bentuknya disamakan dengan `updateCartItem` yang sejak awal
+     * sudah membedakan keduanya.
+     */
+    addToCart: async (
+      ref: { productId?: string; umkmProductId?: string },
+      quantity: number,
+    ) =>
       pick<Cart>(
         await rawRequest('/cart/add', {
           method: 'POST',
-          body: JSON.stringify({ productId, quantity }),
+          body: JSON.stringify({ ...ref, quantity }),
         }),
         'cart',
       ),
