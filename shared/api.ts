@@ -54,6 +54,14 @@ import type {
 export interface ApiClientOptions {
   baseUrl: string;
   getToken?: () => string | null;
+  /**
+   * Menyegarkan sesi setelah backend menjawab 401.
+   *
+   * Mengembalikan true bila token baru berhasil didapat, sehingga
+   * permintaannya layak diulang. Disediakan aplikasi, bukan di sini: klien
+   * ini juga dipakai landing yang tidak punya sesi sama sekali.
+   */
+  refreshAuth?: () => Promise<boolean>;
 }
 
 export class ApiError extends Error {
@@ -110,10 +118,24 @@ function toMarketplaceProduct(p: WireProduct): MarketplaceProduct {
 /** Respons JSON backend apa adanya; bentuk tiap endpoint dibaca lewat `pick()`. */
 type JsonBody = Record<string, unknown> | null;
 
-export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
+/**
+ * Jalur yang tidak boleh memicu penyegaran sesi.
+ *
+ * `/auth/refresh` yang menjawab 401 berarti refresh token-nya sendiri sudah
+ * mati — menyegarkan lagi hanya menghasilkan lingkaran. Login dan register
+ * menjawab 401 untuk kredensial yang salah, bukan untuk sesi kedaluwarsa.
+ */
+const NO_REFRESH = ['/auth/refresh', '/auth/login', '/auth/register'];
+
+export function createApiClient({
+  baseUrl,
+  getToken,
+  refreshAuth,
+}: ApiClientOptions) {
   async function rawRequest(
     path: string,
     init: RequestInit = {},
+    retried = false,
   ): Promise<JsonBody> {
     const token = getToken?.();
     const res = await fetch(`${baseUrl}${path}`, {
@@ -124,6 +146,28 @@ export function createApiClient({ baseUrl, getToken }: ApiClientOptions) {
         ...(init.headers ?? {}),
       },
     });
+
+    /**
+     * Access token kedaluwarsa → segarkan sekali, lalu ulangi.
+     *
+     * Sekali saja: 401 yang tetap datang setelah token baru berarti
+     * permintaannya memang ditolak, bukan sesinya yang basi, dan mengulang
+     * terus hanya membuat lingkaran yang tidak pernah selesai.
+     *
+     * Badan FormData tidak bisa dikirim ulang — aliran berkasnya sudah
+     * habis terbaca pada percobaan pertama.
+     */
+    if (
+      res.status === 401 &&
+      !retried &&
+      refreshAuth &&
+      !NO_REFRESH.some((p) => path.startsWith(p)) &&
+      !(init.body instanceof FormData)
+    ) {
+      const refreshed = await refreshAuth();
+      if (refreshed) return rawRequest(path, init, true);
+    }
+
     const body: JsonBody = await res.json().catch(() => null);
     if (!res.ok) {
       // Nest mengirim `message` sebagai string atau array string; apa pun
