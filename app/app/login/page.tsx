@@ -1,10 +1,10 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
-import { setTokens } from '@/lib/auth';
+import { isSignedIn, setTokens, syncSessionCookie } from '@/lib/auth';
 import { Button, Card, SectionHeader } from '@shared/design/ui';
 
 /** Masuk — padanan `LoginScreen` pada aplikasi Flutter. */
@@ -25,6 +25,21 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Sesi yang sudah ada langsung diteruskan.
+   *
+   * Middleware hanya bisa membaca cookie penanda, sementara tokennya tinggal
+   * di localStorage. Siapa pun yang masuk sebelum penanda itu ada — atau
+   * yang cookie-nya kedaluwarsa lebih dulu — akan dilempar ke halaman ini
+   * padahal sesinya masih hidup, lalu terdiam di formulir masuk tanpa tahu
+   * kenapa. `syncSessionCookie` menanam ulang penandanya, dan ia dikirim
+   * kembali ke tujuan semula.
+   */
+  useEffect(() => {
+    syncSessionCookie();
+    if (isSignedIn()) router.replace(next);
+  }, [next, router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

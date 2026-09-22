@@ -165,3 +165,49 @@ describe('menambah ke keranjang', () => {
     expect(cart.id).toBe('c1');
   });
 });
+
+/**
+ * Envelope alamat.
+ *
+ * Bug yang ditutup tes ini: `/addresses` menjawab `{ success, addresses }`,
+ * bukan `{ success, data }`. Klien membacanya sebagai `data`, jadi `pick()`
+ * jatuh ke SELURUH objek envelope. Halaman checkout lalu memanggil
+ * `addresses.find(...)` pada objek itu, melempar "find is not a function",
+ * dan Next menampilkan "This page couldn't load" — seluruh checkout mati.
+ */
+describe('alamat pengiriman', () => {
+  it('membaca daftar dari kunci `addresses`', async () => {
+    withFetch(200, {
+      success: true,
+      addresses: [{ id: 'a1', title: 'Rumah' }],
+    });
+    const list = await client().getAddresses();
+    expect(Array.isArray(list)).toBe(true);
+    expect(list[0].id).toBe('a1');
+  });
+
+  it('envelope tak terduga menghasilkan daftar kosong, bukan lemparan', async () => {
+    // Daftar kosong hanya menyembunyikan alamat; objek yang lolos ke layar
+    // menjatuhkan seluruh halaman.
+    withFetch(200, { success: true, sesuatuYangLain: [{ id: 'a1' }] });
+    await expect(client().getAddresses()).resolves.toEqual([]);
+  });
+
+  it('daftar kosong tetap array', async () => {
+    withFetch(200, { success: true, addresses: [] });
+    await expect(client().getAddresses()).resolves.toEqual([]);
+  });
+
+  it('menyimpan alamat membaca kunci `address`', async () => {
+    withFetch(201, {
+      success: true,
+      message: 'ok',
+      address: { id: 'a9', title: 'Kantor' },
+    });
+    const saved = await client().createAddress({
+      title: 'Kantor', recipientName: 'B', phone: '0812',
+      street: 'Jl', city: 'BA', state: 'Aceh', postalCode: '23111',
+    });
+    expect(saved.id).toBe('a9');
+  });
+});

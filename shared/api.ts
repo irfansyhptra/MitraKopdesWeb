@@ -6,6 +6,7 @@
 //   - cart:       { success, cart }
 //   - order:      { success, order }
 //   - history:    { success, orders }
+//   - alamat:     { success, addresses } dan { success, address }
 // Karena itu ada `pick()` untuk mengambil key yang tepat.
 
 import type {
@@ -185,6 +186,18 @@ export function createApiClient({
     return body;
   }
 
+  /**
+   * Memastikan yang dikembalikan benar-benar daftar.
+   *
+   * Envelope backend berbeda-beda, dan kunci yang meleset membuat `pick()`
+   * mengembalikan objek envelope alih-alih arraynya. Layar yang memanggil
+   * `.map` atau `.find` pada objek itu melempar dan menjatuhkan seluruh
+   * halaman — kegagalan yang jauh lebih besar daripada daftar kosong.
+   */
+  function asArray<T>(value: unknown): T[] {
+    return Array.isArray(value) ? (value as T[]) : [];
+  }
+
   // Ambil field tertentu dari envelope (default 'data').
   function pick<T>(body: JsonBody, key = 'data'): T {
     return (body?.[key] ?? body) as T;
@@ -353,14 +366,25 @@ export function createApiClient({
     me: () => request<User>('/auth/me'),
 
     // ── Alamat pengiriman ──
-    getAddresses: () => request<Address[]>('/addresses'),
-    createAddress: (payload: CreateAddressInput) =>
-      request<Address>('/addresses', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      }),
+    //
+    // Envelope-nya BUKAN `data`: daftar memakai `addresses`, penyimpanan
+    // memakai `address`. Membacanya sebagai `data` membuat `pick()` jatuh ke
+    // seluruh objek envelope, lalu `addresses.find(...)` di halaman checkout
+    // melempar "find is not a function" dan seluruh halaman gagal dimuat.
+    getAddresses: async () =>
+      asArray<Address>(pick(await rawRequest('/addresses'), 'addresses')),
+    createAddress: async (payload: CreateAddressInput) =>
+      pick<Address>(
+        await rawRequest('/addresses', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }),
+        'address',
+      ),
     deleteAddress: (id: string) =>
-      request<{ id: string }>(`/addresses/${id}`, { method: 'DELETE' }),
+      request<{ id: string }>(`/addresses/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      }),
 
     // ── Pesanan: timeline & penerimaan ──
     getOrderTimeline: async (id: string) => {
