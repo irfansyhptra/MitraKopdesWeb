@@ -16,8 +16,9 @@
     "build:landing": "npm run build --workspace=landing",
     "start": "npm run start --workspace=app",
     "typecheck": "npm run typecheck --workspace=app && npm run typecheck --workspace=landing",
-    "lint": "eslint app landing shared test",
+    "lint": "eslint app landing shared test scripts",
     "test": "vitest run",
+    "audit:responsive": "node scripts/audit-responsive.mjs",
     "test:watch": "vitest"
   },
   "engines": {

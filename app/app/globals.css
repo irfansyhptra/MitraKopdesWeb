@@ -43,6 +43,8 @@
 .brand {
   display: inline-flex;
   align-items: baseline;
+  /* 28px teks + 8px atas-bawah = target sentuh 44px tanpa merusak baseline. */
+  padding: 8px 0;
   gap: 1px;
   font-size: 19px;
   font-weight: 800;
@@ -145,11 +147,15 @@
 /* Ruang untuk bilah bawah supaya isi terakhir tidak tertutup. */
 @media (max-width: 719px) {
   .main {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom) + var(--sp-lg));
+    padding-bottom: calc(70px + env(safe-area-inset-bottom) + var(--sp-lg));
   }
 }
 
-/* ── Navigasi bawah (padanan CustomBottomNavBar) ── */
+/* ── Navigasi bawah (padanan CustomBottomNavBar) ──
+   Bertukar dengan `.topnav` pada 720px, bukan 600px seperti breakpoint tablet
+   lainnya: merek + lima tautan + aksi butuh ~687px, jadi pada 600px baris atas
+   meluber. Aplikasi memakai rail samping di ukuran ini; web belum punya rail,
+   jadi bilah bawah dipertahankan sampai nav atas benar-benar muat. */
 
 .bottomnav {
   position: fixed;
@@ -172,7 +178,7 @@
 
 .bottomnav a {
   flex: 1;
-  min-height: 60px;
+  min-height: 70px;
   display: flex;
   flex-direction: column;
   align-items: center;

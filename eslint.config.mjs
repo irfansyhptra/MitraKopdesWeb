@@ -41,4 +41,11 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Skrip perkakas berjalan di Node, bukan di browser.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly', fetch: 'readonly', WebSocket: 'readonly' },
+    },
+  },
 );
