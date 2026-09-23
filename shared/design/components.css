@@ -253,8 +253,14 @@
   /* Dua baris lalu dipotong — sama dengan maxLines: 2 di kartu Flutter. */
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* Nama produk adalah tautan tersendiri sejak tombol keranjang masuk ke
+     kartu, jadi ia butuh tinggi sentuh sendiri: 36px isi + 4px atas-bawah.
+     Satu baris saja tanpa ini hanya 20px. */
+  min-height: 36px;
+  padding-block: 4px;
 }
 
 .kc-product__seller {
@@ -918,6 +924,110 @@
 }
 
 .kc-sheet__acts > * {
+  flex: 1;
+}
+
+/* ── Detail Kopdes: pelayanan, jam buka, keanggotaan ─────────────────── */
+.kc-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-md);
+}
+
+.kc-service {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  min-height: 44px;
+  padding: 0 var(--sp-md) 0 var(--sp-sm);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hairline-soft);
+  background: var(--canvas);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.kc-service__icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--tile-tint, var(--primary)) 14%, transparent);
+  color: var(--tile-tint, var(--primary));
+}
+
+.kc-hours__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-md);
+  padding: 7px 0;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.kc-hours__row + .kc-hours__row {
+  border-top: 1px solid var(--hairline-soft);
+}
+
+.kc-hours__row dt {
+  color: var(--body);
+}
+
+.kc-hours__closed {
+  color: var(--muted);
+}
+
+.kc-member__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-md);
+}
+
+.kc-member__icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-md);
+  background: var(--primary-tint);
+  color: var(--primary);
+}
+
+.kc-member__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.kc-member__sub {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.kc-member__state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+}
+
+.kc-member__error {
+  font-size: 12.5px;
+  color: var(--error-text, var(--primary));
+}
+
+.kc-member__acts {
+  display: flex;
+  gap: var(--sp-md);
+}
+
+.kc-member__acts > * {
   flex: 1;
 }
 

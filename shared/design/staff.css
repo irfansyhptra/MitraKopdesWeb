@@ -745,3 +745,9 @@
   .staff-skeleton { animation: none; }
   .staff-tile { transition: none; }
 }
+
+/* Baris jam operasional: hari, jam buka, jam tutup. */
+.staff-hours__row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: var(--sp-sm); }
+.staff-hours__row input { min-height: 44px; padding: 0 var(--sp-sm); border: 1px solid var(--st-divider); border-radius: var(--r-sm); background: var(--st-surface); color: var(--st-ink); font: inherit; font-size: 13px; }
+/* Pada layar sempit ketiga kolom tidak muat; harinya naik ke barisnya sendiri. */
+@media (max-width: 380px) { .staff-hours__row { grid-template-columns: 1fr 1fr; } .staff-hours__row > span { grid-column: 1 / -1; font-size: 13px; font-weight: 600; } }

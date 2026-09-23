@@ -1,17 +1,22 @@
+import Link from 'next/link';
 import { publicApi } from '@/lib/api';
-import { Card, Message } from '@shared/design/ui';
+import { Badge, Card, Message } from '@shared/design/ui';
 import {
   BadgeCheck,
   Building2,
+  categoryIcon,
+  Clock,
   MapPin,
   Navigation,
   Package,
   Phone,
   Store,
-  Tag,
+  tintAt,
 } from '@shared/design/icons';
 import { MetaLine, directionsUrl } from '@/components/KopdesCard';
-import type { KoperasiDetail } from '@shared/api';
+import { MembershipCard } from '@/components/MembershipCard';
+import { ProductCard } from '@/components/ProductCard';
+import type { KoperasiDetail, MarketplaceProduct } from '@shared/api';
 
 /**
  * Detail satu Kopdes — padanan `KoperasiDetailScreen`.
@@ -30,6 +35,37 @@ async function getKopdes(id: string): Promise<KoperasiDetail | null> {
     return null;
   }
 }
+
+/**
+ * Etalase koperasi: barangnya sendiri dan barang mitra UMKM di bawahnya —
+ * itu yang dimaksud "produk yang dijual" sebuah Kopdes.
+ *
+ * Disaring server lewat `kopdesId`; katalog penuh tidak pernah diunduh lalu
+ * dibuang di browser. Gagal memuatnya tidak mengosongkan halaman.
+ */
+async function getProducts(kopdesId: string): Promise<MarketplaceProduct[]> {
+  try {
+    const page = await publicApi.getMarketplaceProducts(
+      { kopdesId, sellerType: 'ALL', sort: 'newest' },
+      1,
+      8,
+    );
+    return page.items;
+  } catch {
+    return [];
+  }
+}
+
+/** Nama hari untuk tabel jam operasional, urut mulai Senin. */
+const DAYS: [string, string][] = [
+  ['mon', 'Senin'],
+  ['tue', 'Selasa'],
+  ['wed', 'Rabu'],
+  ['thu', 'Kamis'],
+  ['fri', 'Jumat'],
+  ['sat', 'Sabtu'],
+  ['sun', 'Minggu'],
+];
 
 export async function generateMetadata({
   params,
@@ -54,6 +90,7 @@ export default async function KopdesDetailPage({
 }) {
   const { id } = await params;
   const kopdes = await getKopdes(id);
+  const products = kopdes ? await getProducts(id) : [];
 
   if (!kopdes) {
     return (
@@ -118,6 +155,56 @@ export default async function KopdesDetailPage({
         </div>
       </div>
 
+      {kopdes.serviceCategories.length > 0 && (
+        <section>
+          <h2 className="kc-section-head__title">Pelayanan yang Disediakan</h2>
+          <div className="kc-services">
+            {kopdes.serviceCategories.map((service, i) => {
+              const Icon = categoryIcon(service);
+              return (
+                <span
+                  key={service}
+                  className="kc-service"
+                  style={{ ['--tile-tint' as string]: tintAt(i) }}
+                >
+                  <span className="kc-service__icon" aria-hidden="true">
+                    <Icon size={20} strokeWidth={2.1} />
+                  </span>
+                  {service}
+                </span>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <OpeningHours hours={kopdes.operatingHours} isOpen={kopdes.isOpen} />
+
+      <MembershipCard
+        kopdesId={kopdes.id}
+        kopdesName={kopdes.name}
+        memberCount={kopdes.memberCount ?? 0}
+      />
+
+      {products.length > 0 && (
+        <section>
+          <div className="kc-section-head">
+            <h2 className="kc-section-head__title">Produk yang Dijual</h2>
+            <Link
+              className="kc-section-head__action"
+              href={`/marketplace?kopdesId=${kopdes.id}`}
+            >
+              Lihat Semua
+            </Link>
+          </div>
+          <div className="kc-grid">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <Card>
         <InfoRow icon={<MapPin size={16} />} label="Alamat">
           {address.map((line) => (
@@ -129,11 +216,7 @@ export default async function KopdesDetailPage({
             <a href={`tel:${kopdes.phone}`}>{kopdes.phone}</a>
           </InfoRow>
         )}
-        {kopdes.serviceCategories.length > 0 && (
-          <InfoRow icon={<Tag size={16} />} label="Layanan">
-            <span>{kopdes.serviceCategories.join(' • ')}</span>
-          </InfoRow>
-        )}
+
       </Card>
 
       <div className="kc-kopdes__acts">
@@ -154,6 +237,54 @@ export default async function KopdesDetailPage({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Jam operasional per hari.
+ *
+ * `null` pada sebuah hari berarti tutup, dan tidak adanya kolom sama sekali
+ * berarti pengurus belum mengisinya — dua hal yang berbeda, jadi yang kedua
+ * tidak digambar sebagai "tutup setiap hari".
+ */
+function OpeningHours({
+  hours,
+  isOpen,
+}: {
+  hours: KoperasiDetail['operatingHours'];
+  isOpen?: boolean | null;
+}) {
+  if (!hours || Object.keys(hours).length === 0) return null;
+
+  return (
+    <section>
+      <div className="kc-section-head">
+        <h2 className="kc-section-head__title kc-section-head__title--icon">
+          <Clock size={17} aria-hidden="true" />
+          Jam Operasional
+        </h2>
+        {isOpen != null && (
+          <Badge variant={isOpen ? 'success' : 'muted'}>
+            {isOpen ? 'Buka sekarang' : 'Tutup sekarang'}
+          </Badge>
+        )}
+      </div>
+      <Card>
+        <dl className="kc-hours">
+          {DAYS.map(([key, label]) => {
+            const day = hours[key];
+            return (
+              <div key={key} className="kc-hours__row">
+                <dt>{label}</dt>
+                <dd className={day ? undefined : 'kc-hours__closed'}>
+                  {day ? `${day.open} – ${day.close}` : 'Tutup'}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      </Card>
+    </section>
   );
 }
 

@@ -6,6 +6,7 @@ import { clearTokens } from '@/lib/auth';
 import { useStaff } from '@/components/staff/StaffContext';
 import { roleLabel } from '@/components/staff/StaffShell';
 import { StaffDialog, StaffPageHeader } from '@/components/staff/StaffPage';
+import { KopdesProfileForm } from '@/components/staff/KopdesProfileForm';
 import { LogOut, Mail, Phone, Store } from '@shared/design/icons';
 
 export default function StaffProfilePage() {
@@ -26,6 +27,7 @@ export default function StaffProfilePage() {
           <div><Store size={20} /><dt>Koperasi</dt><dd>{store?.name ?? user?.kopdes?.name ?? 'Belum ditetapkan'}</dd></div>
         </dl>
       </section>
+      <KopdesProfileForm />
       <button className="staff-btn staff-btn--outline" onClick={() => setConfirm(true)}><LogOut size={18} /> Keluar</button>
     </div>
     {confirm && <StaffDialog title="Keluar dari akun?" onClose={() => setConfirm(false)}>

@@ -4,27 +4,24 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { api, publicApi } from '@/lib/api';
-import { Badge, Message, ProductGridSkeleton, SellerBadge } from '@shared/design/ui';
+import { Message, ProductGridSkeleton } from '@shared/design/ui';
 import {
   ArrowLeft,
   Building2,
   categoryIcon,
   LayoutGrid,
   Navigation,
-  Package,
-  Plus,
   Search,
   ShoppingBasket,
   SlidersHorizontal,
-  Star,
   Store,
   tintAt,
   Utensils,
   type LucideIcon,
 } from '@shared/design/icons';
-import { formatRupiah, toRupiah } from '@shared/format';
 import { readSellerType } from './readSellerType';
 import { MarketplaceFilterSheet } from './FilterSheet';
+import { ProductCard } from '@/components/ProductCard';
 import type {
   Banner,
   Category,
@@ -77,6 +74,9 @@ function MarketplaceBrowser() {
     sellerType: readSellerType(params?.get('sellerType')),
     sort: 'newest',
     categoryId: params?.get('categoryId') ?? undefined,
+    // Halaman detail Kopdes menautkan ke sini dengan `?kopdesId=`, jadi
+    // "Lihat Semua" tetap menampilkan etalase desa itu saja.
+    kopdesId: params?.get('kopdesId') ?? undefined,
     search: initialQuery || undefined,
   }));
   const [searchInput, setSearchInput] = useState(initialQuery);
@@ -205,7 +205,13 @@ function MarketplaceBrowser() {
 
   function resetFilter() {
     setSearchInput('');
-    setFilter({ sellerType: 'ALL', sort: 'newest' });
+    // Lingkup koperasi berasal dari tautan, bukan dari filter yang dipilih
+    // pengguna — melepasnya diam-diam akan menampilkan katalog seluruh desa.
+    setFilter((f) => ({
+      sellerType: 'ALL',
+      sort: 'newest',
+      kopdesId: f.kopdesId,
+    }));
   }
 
   const hasMore = page < totalPages;
@@ -493,112 +499,5 @@ function CategoryRow({
         })}
       </div>
     </section>
-  );
-}
-
-function ProductCard({ product }: { product: MarketplaceProduct }) {
-  const [adding, setAdding] = useState(false);
-  const [added, setAdded] = useState(false);
-
-  const price = toRupiah(product.price);
-  const discount = product.discountPrice ? toRupiah(product.discountPrice) : 0;
-  // Backend menolak harga diskon yang tidak lebih kecil; penjagaan di sini
-  // supaya data lama yang terbalik tampil sebagai harga biasa, bukan sebagai
-  // "diskon -0%".
-  const hasDiscount = discount > 0 && discount < price;
-  const percent = hasDiscount ? Math.round(((price - discount) / price) * 100) : 0;
-  const outOfStock = product.stock <= 0;
-
-  const isUmkm = product.sellerType === 'UMKM';
-  const href = isUmkm ? `/umkm-product/${product.id}` : `/product/${product.id}`;
-
-  async function addToCart() {
-    // Ketukan ganda saat permintaan berjalan tidak boleh mengirim dua kali.
-    if (adding || outOfStock) return;
-    setAdding(true);
-    try {
-      await api.addToCart(
-        isUmkm ? { umkmProductId: product.id } : { productId: product.id },
-        1,
-      );
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
-    } catch {
-      // Gagal menambah tidak mengubah kartu; pengguna bisa mencoba lagi.
-    } finally {
-      setAdding(false);
-    }
-  }
-
-  return (
-    <article className="kc-product">
-      <Link href={href} className="kc-product__media" aria-label={product.name}>
-        {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.imageUrl} alt="" loading="lazy" />
-        ) : (
-          <Package size={30} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
-        )}
-        {hasDiscount && <span className="kc-product__disc">-{percent}%</span>}
-        <span className="kc-product__tag">
-          <SellerBadge kind={product.sellerType} />
-        </span>
-      </Link>
-
-      <div className="kc-product__body">
-        <Link href={href} className="kc-product__name">
-          {product.name}
-        </Link>
-        <p className="kc-product__seller">{product.sellerName}</p>
-
-        {/* Rata-rata null berarti belum ada ulasan — bukan nol bintang,
-            jadi barisnya tidak digambar sama sekali. */}
-        {product.rating.average != null && (
-          <p className="kc-product__seller">
-            <Star
-              size={12}
-              aria-hidden="true"
-              style={{ color: 'var(--yellow-accent)', fill: 'currentColor' }}
-            />{' '}
-            {product.rating.average.toFixed(1)}
-            {product.rating.count ? ` (${product.rating.count})` : ''}
-          </p>
-        )}
-
-        {/* Stok habis ditulis, bukan hanya diberi warna — warna saja tidak
-            terbaca pengguna yang buta warna. */}
-        {outOfStock && <Badge variant="muted">Stok habis</Badge>}
-
-        <div className="kc-product__foot">
-          <div>
-            <p className="kc-product__price">
-              {formatRupiah(hasDiscount ? discount : price)}
-            </p>
-            {hasDiscount && (
-              <p className="kc-product__strike">
-                <span className="visually-hidden">Harga sebelum diskon </span>
-                {formatRupiah(price)}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            className="kc-addbtn"
-            onClick={() => void addToCart()}
-            disabled={adding || outOfStock}
-            aria-label={
-              outOfStock
-                ? `${product.name} stok habis`
-                : `Tambah ${product.name} ke keranjang`
-            }
-          >
-            <Plus size={18} aria-hidden="true" />
-          </button>
-        </div>
-        <span role="status" className="visually-hidden">
-          {added ? `${product.name} ditambahkan ke keranjang` : ''}
-        </span>
-      </div>
-    </article>
   );
 }

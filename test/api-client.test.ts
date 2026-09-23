@@ -211,3 +211,18 @@ describe('alamat pengiriman', () => {
     expect(saved.id).toBe('a9');
   });
 });
+
+describe('envelope kosong', () => {
+  it('`data: null` diteruskan sebagai null, bukan seluruh envelope', async () => {
+    // Status keanggotaan yang belum ada dijawab `{ success: true, data: null }`.
+    // Dengan `??`, pemanggilnya menerima `{ success, data }` — objek truthy
+    // tanpa `status`, sehingga kartu keanggotaan tidak menggambar apa pun.
+    withFetch(200, { success: true, data: null });
+    await expect(client().getMembership('k1')).resolves.toBeNull();
+  });
+
+  it('jawaban tanpa envelope tetap diteruskan apa adanya', async () => {
+    withFetch(200, { id: 'p1', name: 'Beras' });
+    await expect(client().getProduct('p1')).resolves.toMatchObject({ id: 'p1' });
+  });
+});

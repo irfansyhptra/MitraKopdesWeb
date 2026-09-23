@@ -10,6 +10,10 @@
 // Karena itu ada `pick()` untuk mengambil key yang tepat.
 
 import type {
+  UpdateKopdesProfileInput,
+  MembershipStatus,
+  Membership,
+  ApplyMembershipInput,
   Banner,
   Address,
   AuthResult,
@@ -205,9 +209,17 @@ export function createApiClient({
     return Array.isArray(value) ? (value as T[]) : [];
   }
 
-  // Ambil field tertentu dari envelope (default 'data').
+  /**
+   * Ambil field tertentu dari envelope (default 'data').
+   *
+   * Memeriksa keberadaan kuncinya, bukan `??`: `{ success: true, data: null }`
+   * adalah jawaban yang sah — "belum pernah mendaftar" pada status
+   * keanggotaan, misalnya — dan dengan `??` seluruh envelope yang dikembalikan,
+   * sehingga pemanggilnya menerima objek tanpa field yang ia cari alih-alih
+   * `null` yang jelas.
+   */
   function pick<T>(body: JsonBody, key = 'data'): T {
-    return (body?.[key] ?? body) as T;
+    return (body && key in body ? body[key] : body) as T;
   }
 
   /**
@@ -440,6 +452,7 @@ export function createApiClient({
           sort: filter.sort ?? 'newest',
           ...(filter.search ? { search: filter.search } : {}),
           ...(filter.categoryId ? { categoryId: filter.categoryId } : {}),
+          ...(filter.kopdesId ? { kopdesId: filter.kopdesId } : {}),
           ...(filter.minPrice != null ? { minPrice: filter.minPrice } : {}),
           ...(filter.maxPrice != null ? { maxPrice: filter.maxPrice } : {}),
           ...(filter.inStock ? { inStock: 'true' } : {}),
@@ -498,6 +511,44 @@ export function createApiClient({
       ),
     getKoperasi: (id: string) =>
       request<KoperasiDetail>(`/koperasi/${encodeURIComponent(id)}`),
+
+    // ── Keanggotaan Kopdes (butuh autentikasi) ──
+    // `null` berarti belum pernah mendaftar — dibedakan dari ditolak, yang
+    // punya alasannya sendiri untuk ditampilkan.
+    getMembership: (kopdesId: string) =>
+      request<Membership | null>(
+        `/koperasi/${encodeURIComponent(kopdesId)}/members/me`,
+      ),
+    applyMembership: (kopdesId: string, payload: ApplyMembershipInput) =>
+      request<Membership>(`/koperasi/${encodeURIComponent(kopdesId)}/members`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    // ── Verifikasi anggota (pengurus koperasi) ──
+    getMembers: async (status?: MembershipStatus) => {
+      const body = await rawRequest(
+        `/admin/members${status ? `?status=${status}` : ''}`,
+      );
+      const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
+      return asArray<Membership>(data.members);
+    },
+    updateKopdesProfile: (payload: UpdateKopdesProfileInput) =>
+      request<Koperasi>('/admin/kopdes/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    getMemberCounts: () =>
+      request<Record<MembershipStatus, number>>('/admin/members/counts'),
+    reviewMembership: (
+      id: string,
+      status: 'ACTIVE' | 'REJECTED',
+      reviewNote?: string,
+    ) =>
+      request<Membership>(`/admin/members/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, ...(reviewNote ? { reviewNote } : {}) }),
+      }),
 
     getCategories: () => request<Category[]>('/categories'),
     /// Iklan utama. Gagal memuatnya tidak boleh menghentikan katalog, jadi
@@ -782,6 +833,10 @@ export function createApiClient({
 export type ApiClient = ReturnType<typeof createApiClient>;
 
 export type {
+  UpdateKopdesProfileInput,
+  MembershipStatus,
+  Membership,
+  ApplyMembershipInput,
   Banner,
   Address,
   AssignableRole,

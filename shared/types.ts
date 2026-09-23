@@ -55,6 +55,8 @@ export const Permissions = {
   aiAssist: 'ai:assist',
   aiExecutive: 'ai:executive',
   kopdesPolicyManage: 'kopdes:policy:manage',
+  /** Memverifikasi pendaftaran anggota koperasi — hanya Admin Kopdes. */
+  memberManage: 'member:manage',
   /** Mengelola akun pegawai di Kopdes sendiri — hanya Admin Kopdes. */
   staffManage: 'staff:manage',
   userManage: 'user:manage',
@@ -213,12 +215,54 @@ export interface Koperasi {
   /** `null` berarti jam operasional belum diisi — bukan "tutup". */
   isOpen?: boolean | null;
   rating: RatingSummary;
+
+  /**
+   * Jam operasional per hari: `{ "mon": { "open": "07:00", "close": "17:00" },
+   * "sun": null }`. Hari yang null atau tidak ada berarti tutup.
+   */
+  operatingHours?: Record<string, { open: string; close: string } | null> | null;
 }
 
 export interface KoperasiDetail extends Koperasi {
   postalCode?: string | null;
   productCount: number;
   umkmCount: number;
+  /** Hanya anggota berstatus ACTIVE; pendaftar yang menunggu belum dihitung. */
+  memberCount: number;
+}
+
+// ── Keanggotaan Kopdes ──
+
+export type MembershipStatus = 'PENDING' | 'ACTIVE' | 'REJECTED';
+
+export interface Membership {
+  id: string;
+  kopdesId: string;
+  status: MembershipStatus;
+  fullName: string;
+  phone: string;
+  address: string;
+  note?: string | null;
+  /** Alasan penolakan, atau catatan pengurus saat menyetujui. */
+  reviewNote?: string | null;
+  reviewedAt?: string | null;
+  createdAt: string;
+  /** Hanya pada daftar pengurus; pemohon tidak melihat data akun orang lain. */
+  user?: { id: string; name: string; email: string };
+}
+
+export interface UpdateKopdesProfileInput {
+  description?: string;
+  phone?: string;
+  serviceCategories?: string[];
+  operatingHours?: Record<string, { open: string; close: string } | null>;
+}
+
+export interface ApplyMembershipInput {
+  fullName: string;
+  phone: string;
+  address: string;
+  note?: string;
 }
 
 /** Radius dibatasi 50 km di backend (`MAX_RADIUS_KM`). */
@@ -296,6 +340,8 @@ export interface MarketplaceFilter {
   inStock?: boolean;
   /** Hanya produk berdiskon. Produk mitra ikut tersaring keluar di server. */
   discounted?: boolean;
+  /** Satu koperasi saja: barangnya sendiri dan barang mitra di bawahnya. */
+  kopdesId?: string;
   /** Rating rata-rata minimum; 0 berarti tanpa batas bawah. */
   minRating?: number;
 
