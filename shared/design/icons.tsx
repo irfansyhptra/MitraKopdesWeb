@@ -52,6 +52,7 @@ export {
   ShieldCheck,
   // Portal pegawai
   LayoutDashboard,
+  LayoutGrid,
   Package2,
   UsersRound,
   Bell,

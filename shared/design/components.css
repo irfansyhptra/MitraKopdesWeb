@@ -782,6 +782,396 @@
   }
 }
 
+/* ── Marketplace: baris pencarian + tombol filter ───────────────────── */
+.kc-searchrow {
+  display: flex;
+  gap: var(--sp-md);
+  align-items: stretch;
+}
+
+.kc-searchrow > .kc-hero__field {
+  flex: 1;
+  min-width: 0;
+}
+
+.kc-iconbtn--outline {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  color: var(--primary);
+}
+
+/* Keterangan kecil di bawah sebuah kontrol. */
+.kc-hint {
+  margin-top: var(--sp-sm);
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.kc-section-head__title--icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+}
+
+.kc-section-head__title--icon svg {
+  color: var(--primary);
+}
+
+.kc-more {
+  margin-top: var(--sp-lg);
+  text-align: center;
+}
+
+/* ── Modal filter (showMarketplaceFilterSheet) ───────────────────────── */
+.kc-sheet__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.kc-sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: var(--sp-md) var(--page-padding) var(--sp-lg);
+  border-radius: var(--r-modal) var(--r-modal) 0 0;
+  background: var(--canvas);
+}
+
+/* Pada layar lebar modal ini di tengah, bukan menempel ke bawah. */
+@media (min-width: 600px) {
+  .kc-sheet__scrim {
+    align-items: center;
+  }
+
+  .kc-sheet {
+    border-radius: var(--r-modal);
+  }
+}
+
+.kc-sheet__grab {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto var(--sp-base);
+  border-radius: var(--r-pill);
+  background: var(--hairline);
+}
+
+.kc-sheet__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: var(--sp-lg);
+}
+
+.kc-sheet__label {
+  margin: var(--sp-lg) 0 var(--sp-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.kc-sheet__label:first-of-type {
+  margin-top: 0;
+}
+
+.kc-sheet__switch {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-md);
+  min-height: 44px;
+  margin-top: var(--sp-base);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.kc-sheet__switch input {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  flex: none;
+  accent-color: var(--primary);
+}
+
+.kc-sheet__switch small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+.kc-sheet__acts {
+  display: flex;
+  gap: var(--sp-md);
+  margin-top: var(--sp-xl);
+}
+
+.kc-sheet__acts > * {
+  flex: 1;
+}
+
+/* ── Marketplace: kartu filter kategori (FilterOptionCard) ────────────
+   Ikon berwarna di atas, label dua baris di bawah, aktif berisi merah —
+   sama dengan `FilterOptionCard` di aplikasi. */
+.kc-filtercard {
+  flex: none;
+  width: 88px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-md) var(--sp-sm);
+  border-radius: var(--r-md);
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  box-shadow: var(--sh-soft);
+  text-align: center;
+}
+
+.kc-filtercard[aria-selected='true'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: none;
+}
+
+.kc-filtercard__icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  /* Isian ikon: warna tint dengan opasitas rendah, dihitung dari
+     `--tile-tint` yang dipasang di tempat pemakaian. */
+  background: color-mix(in srgb, var(--tile-tint, var(--primary)) 12%, transparent);
+  color: var(--tile-tint, var(--primary));
+}
+
+.kc-filtercard[aria-selected='true'] .kc-filtercard__icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--on-primary);
+}
+
+.kc-filtercard__label {
+  font-size: 11.5px;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--body);
+  /* Dua baris, sama dengan maxLines: 2 di Flutter. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.kc-filtercard[aria-selected='true'] .kc-filtercard__label {
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+/* ── Marketplace: pilih tempat belanja (ShoppingSourceSelector) ──────── */
+.kc-segmented {
+  display: flex;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-button);
+  background: var(--canvas);
+  overflow: hidden;
+}
+
+.kc-segmented button {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 var(--sp-md);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-segmented button + button {
+  border-left: 1px solid var(--hairline-soft);
+}
+
+.kc-segmented button[aria-selected='true'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+/* Di bawah 420px empat segmen berdampingan memotong labelnya; di situ
+   deretannya digulir seperti di aplikasi. */
+@media (max-width: 419px) {
+  .kc-segmented {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .kc-segmented::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kc-segmented button {
+    flex: none;
+  }
+}
+
+/* ── Marketplace: iklan utama (CompactPromoBanner) ───────────────────── */
+.kc-promobanner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-base);
+  padding: var(--sp-base);
+  border-radius: var(--r-lg);
+  background: linear-gradient(90deg, var(--dark-red), var(--bright-red));
+  color: #fff;
+  box-shadow: var(--sh-soft);
+}
+
+.kc-promobanner__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.kc-promobanner__badge {
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--yellow-accent);
+  /* 11px, bukan 9,5px seperti di aplikasi: pada layar dibaca dari jarak
+     lengan, di bawah 11px teksnya mulai tidak terbaca. */
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.kc-promobanner__title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.kc-promobanner__title em {
+  font-style: normal;
+  color: var(--yellow-accent);
+}
+
+.kc-promobanner__body {
+  font-size: 12px;
+  line-height: 1.35;
+  opacity: 0.9;
+}
+
+.kc-promobanner__cta {
+  margin-top: var(--sp-sm);
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--sp-base);
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.kc-promobanner__art {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--yellow-accent);
+}
+
+.kc-promobanner__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: var(--r-pill);
+}
+
+/* Pada layar sangat sempit gambar dilepas, bukan menindih teks. */
+@media (max-width: 359px) {
+  .kc-promobanner__art {
+    display: none;
+  }
+}
+
+/* ── Marketplace: tambahan pada kartu produk ─────────────────────────── */
+.kc-product__disc {
+  position: absolute;
+  top: var(--sp-sm);
+  left: var(--sp-sm);
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.kc-product__tag {
+  position: absolute;
+  bottom: var(--sp-sm);
+  left: var(--sp-sm);
+}
+
+.kc-product__foot {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-sm);
+  margin-top: auto;
+}
+
+.kc-product__foot > div {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Tombol tambah bulat merah, padanan AppleAddButton. */
+.kc-addbtn {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.kc-addbtn:disabled {
+  background: var(--muted-soft);
+}
+
 /* ── Card Kopdes (KoperasiCard) ───────────────────────────────────────
    Lebar 268px di rail beranda, sama dengan versi mobile; `--wide` melepas
    lebar itu untuk halaman daftar. */

@@ -38,7 +38,7 @@ const PROBE = `(() => {
     const r = el.getBoundingClientRect();
     if (r.width < 1 && r.height < 1) continue;
     // Item di dalam rail mendatar memang menggulir; itu bukan luberan.
-    if ((r.right > vw + 1 || r.left < -1) && !el.closest('.kc-rail, .filterbar__row, .kc-tabs, .staff-nav, .bottomnav')) {
+    if ((r.right > vw + 1 || r.left < -1) && !el.closest('.kc-rail, .kc-segmented, .filterbar__row, .kc-tabs, .staff-nav, .bottomnav')) {
       const id = el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).slice(0,2).join('.') : '');
       out.wide.push(id + ' @' + Math.round(r.left) + '..' + Math.round(r.right));
     }

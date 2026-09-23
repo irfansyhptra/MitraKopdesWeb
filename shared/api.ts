@@ -10,6 +10,7 @@
 // Karena itu ada `pick()` untuk mengambil key yang tepat.
 
 import type {
+  Banner,
   Address,
   AuthResult,
   Cart,
@@ -97,6 +98,7 @@ interface WireProduct {
   source?: 'KOPDES' | 'UMKM';
   rating?: { average: number | null; count: number } | null;
   distanceLabel?: string | null;
+  discountPrice?: number | string | null;
 }
 
 function toMarketplaceProduct(p: WireProduct): MarketplaceProduct {
@@ -117,6 +119,7 @@ function toMarketplaceProduct(p: WireProduct): MarketplaceProduct {
     // Null berarti belum ada ulasan — bukan nol bintang.
     rating: p.rating ?? { average: null, count: 0 },
     distanceLabel: p.distanceLabel ?? null,
+    discountPrice: p.discountPrice == null ? null : Number(p.discountPrice),
   };
 }
 
@@ -440,6 +443,15 @@ export function createApiClient({
           ...(filter.minPrice != null ? { minPrice: filter.minPrice } : {}),
           ...(filter.maxPrice != null ? { maxPrice: filter.maxPrice } : {}),
           ...(filter.inStock ? { inStock: 'true' } : {}),
+          ...(filter.discounted ? { discounted: 'true' } : {}),
+          ...(filter.minRating ? { minRating: filter.minRating } : {}),
+          // Koordinat hanya berarti bersama sort=distance; server memakainya
+          // untuk menghitung jarak dan menolak urutan itu tanpa keduanya.
+          ...(filter.sort === 'distance' &&
+          filter.latitude != null &&
+          filter.longitude != null
+            ? { latitude: filter.latitude, longitude: filter.longitude }
+            : {}),
         })}`,
       );
       const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
@@ -488,6 +500,9 @@ export function createApiClient({
       request<KoperasiDetail>(`/koperasi/${encodeURIComponent(id)}`),
 
     getCategories: () => request<Category[]>('/categories'),
+    /// Iklan utama. Gagal memuatnya tidak boleh menghentikan katalog, jadi
+    /// pemanggilnya yang memutuskan cadangannya.
+    getBanners: () => request<Banner[]>('/banners'),
     /// Detail produk Mitra UMKM — endpoint terpisah dari produk Kopdes.
     getUmkmProduct: (id: string) =>
       request<Record<string, unknown>>(`/umkm/products/${id}`),
@@ -767,6 +782,7 @@ export function createApiClient({
 export type ApiClient = ReturnType<typeof createApiClient>;
 
 export type {
+  Banner,
   Address,
   AssignableRole,
   Koperasi,

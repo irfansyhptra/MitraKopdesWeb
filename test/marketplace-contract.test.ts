@@ -150,3 +150,60 @@ describe('sellerType dari URL', () => {
     expect(readSellerType(undefined)).toBe('ALL');
   });
 });
+
+describe('filter lanjutan marketplace', () => {
+  it('mengirim discounted dan minRating ke server, bukan menyaring lokal', async () => {
+    const fetchMock = withFetch(EMPTY);
+    await client().getMarketplaceProducts(
+      { sellerType: 'ALL', sort: 'newest', discounted: true, minRating: 4 },
+      1,
+      20,
+    );
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain('discounted=true');
+    expect(url).toContain('minRating=4');
+  });
+
+  it('mengirim koordinat hanya bersama urutan jarak', async () => {
+    const fetchMock = withFetch(EMPTY);
+    // Tanpa sort=distance koordinat tidak berarti apa-apa di server, dan
+    // mengirimnya hanya mencabangkan cache tanpa guna.
+    await client().getMarketplaceProducts(
+      { sellerType: 'ALL', sort: 'newest', latitude: 5.5, longitude: 95.3 },
+      1,
+      20,
+    );
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain('latitude');
+
+    const withSort = withFetch(EMPTY);
+    await client().getMarketplaceProducts(
+      { sellerType: 'ALL', sort: 'distance', latitude: 5.5, longitude: 95.3 },
+      1,
+      20,
+    );
+    const url = String(withSort.mock.calls[0][0]);
+    expect(url).toContain('sort=distance');
+    expect(url).toContain('latitude=5.5');
+    expect(url).toContain('longitude=95.3');
+  });
+
+  it('memetakan discountPrice dari kawat, termasuk yang berupa string', async () => {
+    withFetch({
+      success: true,
+      data: {
+        products: [
+          { id: 'p1', name: 'Beras', price: 80000, stock: 3, discountPrice: '64000' },
+          { id: 'p2', name: 'Kue', price: 18000, stock: 3 },
+        ],
+        total: 2,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      },
+    });
+    const res = await client().getMarketplaceProducts({}, 1, 20);
+    expect(res.items[0].discountPrice).toBe(64000);
+    // Tanpa diskon harus null, bukan 0 — nol terbaca sebagai "gratis".
+    expect(res.items[1].discountPrice).toBeNull();
+  });
+});

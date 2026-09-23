@@ -3,64 +3,58 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, publicApi } from '@/lib/api';
+import { Badge, Message, ProductGridSkeleton, SellerBadge } from '@shared/design/ui';
 import {
-  Badge,
-  Chip,
-  Message,
-  ProductGridSkeleton,
-  SellerBadge,
-} from '@shared/design/ui';
-import {
+  ArrowLeft,
+  Building2,
   categoryIcon,
+  LayoutGrid,
+  Navigation,
   Package,
+  Plus,
   Search,
   ShoppingBasket,
+  SlidersHorizontal,
   Star,
+  Store,
   tintAt,
   Utensils,
   type LucideIcon,
 } from '@shared/design/icons';
 import { formatRupiah, toRupiah } from '@shared/format';
 import { readSellerType } from './readSellerType';
+import { MarketplaceFilterSheet } from './FilterSheet';
 import type {
+  Banner,
   Category,
   MarketplaceFilter,
   MarketplaceProduct,
   MarketplaceSellerType,
-  MarketplaceSort,
 } from '@shared/api';
 
 /**
- * Marketplace — padanan `MarketplaceScreen` pada aplikasi Flutter.
+ * Marketplace — padanan `MarketplaceScreen` pada aplikasi Flutter, termasuk
+ * urutan sectionnya: iklan utama, pencarian + filter, Filter Makanan, Filter
+ * Barang Ritel, Pilih Tempat Belanja, lalu Rekomendasi Untukmu.
  *
  * Filter dikirim ke server, bukan disaring di browser: menyaring satu halaman
  * secara lokal memberi hasil salah begitu katalog lebih panjang daripada satu
  * halaman, dan tetap mengunduh baris yang akhirnya dibuang.
  *
- * Deret tile kategori dipisah Makanan/Barang Ritel memakai `group` dari
- * backend — pembagian yang sama dengan `foodCategoriesProvider` dan
- * `retailCategoriesProvider` di aplikasi mobile.
+ * Yang sengaja tidak ditiru dari mobile: tombol favorit. Di aplikasi favorit
+ * tersimpan lewat ApiCache; di web belum ada penyimpanannya, dan hati yang
+ * tidak menyimpan apa pun lebih buruk daripada tidak ada hati sama sekali.
  */
 
-const SELLER_TABS: { id: MarketplaceSellerType; label: string }[] = [
-  { id: 'ALL', label: 'Semua' },
-  { id: 'KOPDES', label: 'Barang Kopdes' },
-  { id: 'UMKM', label: 'Mitra UMKM' },
-];
+/** Sumber produk. "Terdekat" butuh koordinat, jadi ia bukan sellerType. */
+type SourceTab = MarketplaceSellerType | 'NEAREST';
 
-/**
- * Hanya urutan yang benar-benar didukung backend.
- *
- * "Paling Sesuai" dan "Rating" dulu ada di sini padahal server tidak
- * mengenal keduanya — memilihnya membuat seluruh katalog dijawab 400.
- * Urutan menurut rating belum ada; menampilkan tombolnya berarti
- * menjanjikan sesuatu yang tidak dikerjakan.
- */
-const SORTS: { id: MarketplaceSort; label: string }[] = [
-  { id: 'newest', label: 'Terbaru' },
-  { id: 'price_asc', label: 'Termurah' },
-  { id: 'price_desc', label: 'Termahal' },
+const SOURCES: { id: SourceTab; label: string; icon: LucideIcon }[] = [
+  { id: 'ALL', label: 'Semua', icon: Store },
+  { id: 'KOPDES', label: 'Kopdes', icon: Building2 },
+  { id: 'UMKM', label: 'Mitra UMKM', icon: ShoppingBasket },
+  { id: 'NEAREST', label: 'Terdekat', icon: Navigation },
 ];
 
 const PAGE_SIZE = 20;
@@ -87,6 +81,9 @@ function MarketplaceBrowser() {
   }));
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locationDenied, setLocationDenied] = useState(false);
 
   const [items, setItems] = useState<MarketplaceProduct[]>([]);
   const [page, setPage] = useState(1);
@@ -100,26 +97,23 @@ function MarketplaceBrowser() {
   // paling lambat pulang bisa saja permintaan yang paling awal dikirim.
   const requestId = useRef(0);
 
-  const load = useCallback(
-    async (nextFilter: MarketplaceFilter) => {
-      const id = ++requestId.current;
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await api.getMarketplaceProducts(nextFilter, 1, PAGE_SIZE);
-        if (id !== requestId.current) return;
-        setItems(res.items);
-        setPage(res.meta.page);
-        setTotalPages(res.meta.totalPages);
-      } catch (e) {
-        if (id !== requestId.current) return;
-        setError((e as Error).message);
-      } finally {
-        if (id === requestId.current) setLoading(false);
-      }
-    },
-    [],
-  );
+  const load = useCallback(async (nextFilter: MarketplaceFilter) => {
+    const id = ++requestId.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.getMarketplaceProducts(nextFilter, 1, PAGE_SIZE);
+      if (id !== requestId.current) return;
+      setItems(res.items);
+      setPage(res.meta.page);
+      setTotalPages(res.meta.totalPages);
+    } catch (e) {
+      if (id !== requestId.current) return;
+      setError((e as Error).message);
+    } finally {
+      if (id === requestId.current) setLoading(false);
+    }
+  }, []);
 
   // Pencarian ditunda 350 ms: satu permintaan per kata, bukan per ketukan.
   useEffect(() => {
@@ -152,11 +146,7 @@ function MarketplaceBrowser() {
     if (loadingMore || page >= totalPages) return;
     setLoadingMore(true);
     try {
-      const res = await api.getMarketplaceProducts(
-        filter,
-        page + 1,
-        PAGE_SIZE,
-      );
+      const res = await api.getMarketplaceProducts(filter, page + 1, PAGE_SIZE);
       setItems((prev) => [...prev, ...res.items]);
       setPage(res.meta.page);
       setTotalPages(res.meta.totalPages);
@@ -167,54 +157,84 @@ function MarketplaceBrowser() {
     }
   }
 
+  /**
+   * "Terdekat" hanya bisa dipakai setelah koordinat ada: server menolak
+   * `sort=distance` tanpa koordinat yang sah. Izinnya diminta saat tombolnya
+   * ditekan — bukan saat halaman dibuka, karena peramban menghukum permintaan
+   * yang tidak dipicu pengguna — dan filternya baru berubah setelah
+   * koordinatnya benar-benar datang.
+   */
+  function selectSource(next: SourceTab) {
+    if (next !== 'NEAREST') {
+      setFilter((f) => ({ ...f, sellerType: next, sort: 'newest' }));
+      return;
+    }
+
+    if (filter.latitude != null && filter.longitude != null) {
+      setFilter((f) => ({ ...f, sellerType: 'ALL', sort: 'distance' }));
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setLocationDenied(true);
+      return;
+    }
+
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        setLocationDenied(false);
+        setFilter((f) => ({
+          ...f,
+          sellerType: 'ALL',
+          sort: 'distance',
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        }));
+      },
+      // Menolak berbagi lokasi bukan kesalahan pengguna: urutannya tetap
+      // seperti sebelumnya, hanya diberi keterangan.
+      () => {
+        setLocating(false);
+        setLocationDenied(true);
+      },
+      { timeout: 10_000, maximumAge: 5 * 60_000 },
+    );
+  }
+
+  function resetFilter() {
+    setSearchInput('');
+    setFilter({ sellerType: 'ALL', sort: 'newest' });
+  }
+
   const hasMore = page < totalPages;
+  const source: SourceTab =
+    filter.sort === 'distance' ? 'NEAREST' : (filter.sellerType ?? 'ALL');
 
   return (
-    <>
-      <div className="page-head">
-        <div className="page-head__text">
-          <h1 className="page-title">Marketplace</h1>
-          <p className="page-sub">
-            Barang Kopdes dan Mitra UMKM di desamu.
-          </p>
-        </div>
-      </div>
+    <div className="stack-lg">
+      <PromoBanner />
 
-      <div className="filterbar">
-        <div className="searchbox">
-          <Search size={17} aria-hidden="true" />
+      <div className="kc-searchrow">
+        <label className="kc-hero__field">
+          <Search size={18} aria-hidden="true" />
+          <span className="visually-hidden">Cari produk</span>
           <input
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Cari beras, minyak, kue…"
-            aria-label="Cari produk"
+            placeholder="Cari produk kebutuhanmu..."
           />
-        </div>
-
-        <div className="filterbar__row" role="tablist" aria-label="Jenis penjual">
-          {SELLER_TABS.map((tab) => (
-            <Chip
-              key={tab.id}
-              selected={filter.sellerType === tab.id}
-              onClick={() => setFilter((f) => ({ ...f, sellerType: tab.id }))}
-            >
-              {tab.label}
-            </Chip>
-          ))}
-        </div>
-
-        <div className="filterbar__row" aria-label="Urutan">
-          {SORTS.map((sort) => (
-            <Chip
-              key={sort.id}
-              selected={filter.sort === sort.id}
-              onClick={() => setFilter((f) => ({ ...f, sort: sort.id }))}
-            >
-              {sort.label}
-            </Chip>
-          ))}
-        </div>
+        </label>
+        <button
+          type="button"
+          className="kc-iconbtn kc-iconbtn--outline"
+          onClick={() => setSheetOpen(true)}
+          aria-label="Filter produk"
+        >
+          <SlidersHorizontal size={19} aria-hidden="true" />
+        </button>
       </div>
 
       <CategoryRow
@@ -222,7 +242,7 @@ function MarketplaceBrowser() {
         icon={Utensils}
         categories={categories.filter((c) => c.group === 'FOOD')}
         selectedId={filter.categoryId ?? null}
-        onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id }))}
+        onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id ?? undefined }))}
       />
 
       <CategoryRow
@@ -230,57 +250,189 @@ function MarketplaceBrowser() {
         icon={ShoppingBasket}
         categories={categories.filter((c) => c.group === 'RETAIL')}
         selectedId={filter.categoryId ?? null}
-        onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id }))}
+        onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id ?? undefined }))}
       />
 
-      {loading && <ProductGridSkeleton count={8} />}
+      <section>
+        <div className="kc-section-head">
+          <h2 className="kc-section-head__title">Pilih Tempat Belanja</h2>
+        </div>
+        <SourceSelector active={source} onSelect={selectSource} />
+        <p className="kc-hint">
+          {locating
+            ? 'Mencari lokasi Anda…'
+            : locationDenied
+              ? 'Lokasi belum diizinkan, jadi urutan terdekat belum bisa dipakai. ' +
+                'Izinkan lokasi di peramban, lalu coba lagi.'
+              : 'Pilih sumber produk: dari Kopdes (Koperasi Desa) atau Mitra UMKM lokal.'}
+        </p>
+      </section>
 
-      {!loading && error && (
-        <Message
-          title="Produk belum berhasil dimuat"
-          body={error}
-          actionLabel="Coba Lagi"
-          onAction={() => void load(filter)}
-        />
-      )}
+      <section>
+        <div className="kc-section-head">
+          <h2 className="kc-section-head__title">Rekomendasi Untukmu</h2>
+          <button
+            type="button"
+            className="kc-section-head__action"
+            onClick={resetFilter}
+          >
+            Lihat Semua
+          </button>
+        </div>
 
-      {!loading && !error && items.length === 0 && (
-        <Message
-          title="Produk belum ditemukan"
-          body="Coba ubah kata pencarian atau pilih kategori lain."
-        />
-      )}
+        {loading && <ProductGridSkeleton count={8} />}
 
-      {!loading && !error && items.length > 0 && (
-        <>
-          <div className="kc-grid">
-            {items.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+        {!loading && error && (
+          <Message
+            title="Produk belum berhasil dimuat"
+            body={error}
+            actionLabel="Coba Lagi"
+            onAction={() => void load(filter)}
+          />
+        )}
 
-          {hasMore && (
-            <div style={{ textAlign: 'center', marginTop: 'var(--sp-lg)' }}>
-              <button
-                type="button"
-                className="kc-btn kc-btn--secondary"
-                onClick={() => void loadMore()}
-                disabled={loadingMore}
-              >
-                {loadingMore ? 'Memuat…' : 'Muat produk lainnya'}
-              </button>
+        {!loading && !error && items.length === 0 && (
+          <Message
+            title="Produk belum ditemukan"
+            body="Coba ubah kata pencarian atau filter yang digunakan."
+            actionLabel="Atur Ulang Filter"
+            onAction={resetFilter}
+          />
+        )}
+
+        {!loading && !error && items.length > 0 && (
+          <>
+            <div className="kc-grid">
+              {items.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
             </div>
-          )}
-        </>
+
+            {hasMore && (
+              <div className="kc-more">
+                <button
+                  type="button"
+                  className="kc-btn kc-btn--secondary"
+                  onClick={() => void loadMore()}
+                  disabled={loadingMore}
+                >
+                  {loadingMore ? 'Memuat…' : 'Muat produk lainnya'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      {sheetOpen && (
+        <MarketplaceFilterSheet
+          filter={filter}
+          onClose={() => setSheetOpen(false)}
+          onApply={(next) => {
+            // Pencarian dipegang kolomnya sendiri, jadi modal tidak boleh
+            // menghapusnya saat menerapkan filter.
+            setFilter((f) => ({ ...next, search: f.search }));
+            setSheetOpen(false);
+          }}
+        />
       )}
-    </>
+    </div>
   );
 }
 
 /**
- * Deret tile kategori — padanan `CategoryFilterRow` di mobile.
+ * Iklan utama dari `GET /banners`, dengan isi bawaan sebagai cadangan.
  *
- * Menekan tile yang sedang aktif melepas filternya, jadi tidak perlu tombol
+ * Isinya tidak permanen di dalam widget: begitu admin memasang banner, banner
+ * itulah yang tampil. Gagal memuatnya tidak menghentikan katalog.
+ */
+function PromoBanner() {
+  const [banner, setBanner] = useState<Banner | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    publicApi
+      .getBanners()
+      .then((list) => {
+        if (!cancelled && list?.length) setBanner(list[0]);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const item = banner ?? {
+    id: 'default',
+    badge: 'PROMO HARI INI',
+    title: 'Belanja Hemat di',
+    highlight: 'KMP Mitra',
+    description: 'Produk Kopdes dan UMKM pilihan untuk kebutuhan keluarga',
+    ctaLabel: 'Belanja Sekarang',
+    ctaRoute: '/marketplace',
+  };
+
+  return (
+    <Link href={item.ctaRoute || '/marketplace'} className="kc-promobanner">
+      <span className="kc-promobanner__text">
+        {item.badge && <span className="kc-promobanner__badge">{item.badge}</span>}
+        <span className="kc-promobanner__title">
+          {item.title} {item.highlight && <em>{item.highlight}</em>}
+        </span>
+        {item.description && (
+          <span className="kc-promobanner__body">{item.description}</span>
+        )}
+        <span className="kc-promobanner__cta">
+          {item.ctaLabel || 'Belanja Sekarang'}
+          <ArrowLeft
+            size={15}
+            aria-hidden="true"
+            style={{ transform: 'rotate(180deg)' }}
+          />
+        </span>
+      </span>
+      <span className="kc-promobanner__art" aria-hidden="true">
+        {item.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.imageUrl} alt="" />
+        ) : (
+          <ShoppingBasket size={26} />
+        )}
+      </span>
+    </Link>
+  );
+}
+
+function SourceSelector({
+  active,
+  onSelect,
+}: {
+  active: SourceTab;
+  onSelect: (next: SourceTab) => void;
+}) {
+  return (
+    <div className="kc-segmented" role="tablist" aria-label="Sumber produk">
+      {SOURCES.map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          role="tab"
+          aria-selected={active === id}
+          onClick={() => onSelect(id)}
+        >
+          {/* Ikon mendampingi teks, tidak menggantikannya. */}
+          <Icon size={14} aria-hidden="true" />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Deret kartu filter kategori — padanan `CategoryFilterRow` di mobile.
+ *
+ * Menekan kartu yang sedang aktif melepas filternya, jadi tidak perlu tombol
  * "Semua Kategori" terpisah; itu juga perilaku `onSelected(null)` di Dart.
  */
 function CategoryRow({
@@ -299,17 +451,27 @@ function CategoryRow({
   if (categories.length === 0) return null;
 
   return (
-    <section style={{ marginTop: 'var(--sp-lg)' }}>
+    <section>
       <div className="kc-section-head">
-        <h2
-          className="kc-section-head__title"
-          style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-sm)' }}
-        >
-          <TitleIcon size={17} aria-hidden="true" style={{ color: 'var(--primary)' }} />
+        <h2 className="kc-section-head__title kc-section-head__title--icon">
+          <TitleIcon size={17} aria-hidden="true" />
           {title}
         </h2>
       </div>
       <div className="kc-rail">
+        <button
+          type="button"
+          className="kc-filtercard"
+          aria-selected={selectedId === null}
+          onClick={() => onSelect(null)}
+          style={{ ['--tile-tint' as string]: 'var(--primary)' }}
+        >
+          <span className="kc-filtercard__icon" aria-hidden="true">
+            <LayoutGrid size={22} strokeWidth={2.1} />
+          </span>
+          <span className="kc-filtercard__label">Semua</span>
+        </button>
+
         {categories.map((cat, i) => {
           const active = selectedId === cat.id;
           const Icon = categoryIcon(cat.name);
@@ -317,18 +479,15 @@ function CategoryRow({
             <button
               key={cat.id}
               type="button"
-              className="kc-tile"
+              className="kc-filtercard"
               aria-selected={active}
               onClick={() => onSelect(active ? null : cat.id)}
+              style={{ ['--tile-tint' as string]: tintAt(i) }}
             >
-              <span
-                className="kc-tile__icon"
-                style={{ ['--tile-tint' as string]: tintAt(i) }}
-                aria-hidden="true"
-              >
+              <span className="kc-filtercard__icon" aria-hidden="true">
                 <Icon size={22} strokeWidth={2.1} />
               </span>
-              <span className="kc-tile__label">{cat.name}</span>
+              <span className="kc-filtercard__label">{cat.name}</span>
             </button>
           );
         })}
@@ -338,37 +497,60 @@ function CategoryRow({
 }
 
 function ProductCard({ product }: { product: MarketplaceProduct }) {
-  // Endpoint katalog tidak mengirim harga diskon; harga coret hanya muncul
-  // di halaman detail, yang memang membacanya dari produknya langsung.
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+
   const price = toRupiah(product.price);
+  const discount = product.discountPrice ? toRupiah(product.discountPrice) : 0;
+  // Backend menolak harga diskon yang tidak lebih kecil; penjagaan di sini
+  // supaya data lama yang terbalik tampil sebagai harga biasa, bukan sebagai
+  // "diskon -0%".
+  const hasDiscount = discount > 0 && discount < price;
+  const percent = hasDiscount ? Math.round(((price - discount) / price) * 100) : 0;
   const outOfStock = product.stock <= 0;
 
-  const href =
-    product.sellerType === 'UMKM'
-      ? `/umkm-product/${product.id}`
-      : `/product/${product.id}`;
+  const isUmkm = product.sellerType === 'UMKM';
+  const href = isUmkm ? `/umkm-product/${product.id}` : `/product/${product.id}`;
+
+  async function addToCart() {
+    // Ketukan ganda saat permintaan berjalan tidak boleh mengirim dua kali.
+    if (adding || outOfStock) return;
+    setAdding(true);
+    try {
+      await api.addToCart(
+        isUmkm ? { umkmProductId: product.id } : { productId: product.id },
+        1,
+      );
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch {
+      // Gagal menambah tidak mengubah kartu; pengguna bisa mencoba lagi.
+    } finally {
+      setAdding(false);
+    }
+  }
 
   return (
-    <Link href={href} className="kc-product kc-card--tap">
-      <div className="kc-product__media">
+    <article className="kc-product">
+      <Link href={href} className="kc-product__media" aria-label={product.name}>
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.imageUrl} alt={product.name} loading="lazy" />
+          <img src={product.imageUrl} alt="" loading="lazy" />
         ) : (
           <Package size={30} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
         )}
-      </div>
-      <div className="kc-product__body">
-        <div
-          style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}
-        >
+        {hasDiscount && <span className="kc-product__disc">-{percent}%</span>}
+        <span className="kc-product__tag">
           <SellerBadge kind={product.sellerType} />
-          {/* Stok habis ditulis, bukan hanya diberi warna — warna saja tidak
-              terbaca pengguna yang buta warna. */}
-          {outOfStock && <Badge variant="muted">Stok habis</Badge>}
-        </div>
-        <p className="kc-product__name">{product.name}</p>
+        </span>
+      </Link>
+
+      <div className="kc-product__body">
+        <Link href={href} className="kc-product__name">
+          {product.name}
+        </Link>
         <p className="kc-product__seller">{product.sellerName}</p>
+
         {/* Rata-rata null berarti belum ada ulasan — bukan nol bintang,
             jadi barisnya tidak digambar sama sekali. */}
         {product.rating.average != null && (
@@ -382,8 +564,41 @@ function ProductCard({ product }: { product: MarketplaceProduct }) {
             {product.rating.count ? ` (${product.rating.count})` : ''}
           </p>
         )}
-        <p className="kc-product__price">{formatRupiah(price)}</p>
+
+        {/* Stok habis ditulis, bukan hanya diberi warna — warna saja tidak
+            terbaca pengguna yang buta warna. */}
+        {outOfStock && <Badge variant="muted">Stok habis</Badge>}
+
+        <div className="kc-product__foot">
+          <div>
+            <p className="kc-product__price">
+              {formatRupiah(hasDiscount ? discount : price)}
+            </p>
+            {hasDiscount && (
+              <p className="kc-product__strike">
+                <span className="visually-hidden">Harga sebelum diskon </span>
+                {formatRupiah(price)}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="kc-addbtn"
+            onClick={() => void addToCart()}
+            disabled={adding || outOfStock}
+            aria-label={
+              outOfStock
+                ? `${product.name} stok habis`
+                : `Tambah ${product.name} ke keranjang`
+            }
+          >
+            <Plus size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <span role="status" className="visually-hidden">
+          {added ? `${product.name} ditambahkan ke keranjang` : ''}
+        </span>
       </div>
-    </Link>
+    </article>
   );
 }

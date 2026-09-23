@@ -274,6 +274,16 @@ export interface MarketplaceProduct {
   categoryName?: string | null;
   rating: RatingSummary;
   distanceLabel?: string | null;
+
+  /**
+   * Harga setelah diskon — yang dibayar pembeli.
+   *
+   * Backend menolak `discountPrice >= price` (`assertPricing` di
+   * `product.service.ts`), jadi `price` selalu harga normalnya dan yang
+   * dicoret di kartu adalah `price`, bukan ini. Hanya produk Kopdes yang
+   * punya kolom ini; produk mitra selalu null.
+   */
+  discountPrice?: number | null;
 }
 
 export interface MarketplaceFilter {
@@ -284,6 +294,32 @@ export interface MarketplaceFilter {
   minPrice?: number | null;
   maxPrice?: number | null;
   inStock?: boolean;
+  /** Hanya produk berdiskon. Produk mitra ikut tersaring keluar di server. */
+  discounted?: boolean;
+  /** Rating rata-rata minimum; 0 berarti tanpa batas bawah. */
+  minRating?: number;
+
+  /**
+   * Koordinat pembuka halaman, hanya untuk `sort: 'distance'`.
+   *
+   * Server menolak pengurutan jarak tanpa koordinat yang sah (400), jadi
+   * keduanya wajib ada sebelum urutan itu dipakai — bukan dikirim
+   * sendirian dan dibiarkan gagal.
+   */
+  latitude?: number;
+  longitude?: number;
+}
+
+/** Iklan beranda/marketplace dari `GET /banners`. */
+export interface Banner {
+  id: string;
+  badge?: string | null;
+  title: string;
+  highlight?: string | null;
+  description?: string | null;
+  ctaLabel?: string | null;
+  ctaRoute?: string | null;
+  imageUrl?: string | null;
 }
 
 export interface Category {
