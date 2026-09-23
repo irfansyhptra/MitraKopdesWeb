@@ -41,6 +41,7 @@ export {
   // Identitas & status
   BadgeCheck,
   MapPin,
+  Navigation,
   Mail,
   Phone,
   Wallet,

@@ -669,6 +669,11 @@
   grid-template-columns: repeat(3, 1fr);
 }
 
+/* Halaman detail Kopdes hanya punya dua angka. */
+.kc-summary--two {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 .kc-summary__item {
   text-align: center;
   padding-inline: var(--sp-xs);
@@ -742,6 +747,11 @@
    Di layar lebar rail berubah jadi grid: menggulir ke samping dengan mouse
    jauh lebih canggung daripada dengan jempol, dan ruangnya memang ada. */
 .kc-rail {
+  /* Jangkar bagi keturunan `position: absolute` — terutama `.visually-hidden`.
+     Tanpa ini blok penampungnya adalah viewport, sehingga teks pembaca layar
+     di kartu paling kanan tidak ikut terpotong rail dan melebarkan halaman
+     (mis. 390px menjadi 522px) lengkap dengan gulir mendatar. */
+  position: relative;
   display: flex;
   gap: var(--sp-md);
   overflow-x: auto;
@@ -770,6 +780,191 @@
   .kc-rail--wrap > * {
     width: auto !important;
   }
+}
+
+/* ── Card Kopdes (KoperasiCard) ───────────────────────────────────────
+   Lebar 268px di rail beranda, sama dengan versi mobile; `--wide` melepas
+   lebar itu untuk halaman daftar. */
+.kc-kopdes {
+  width: 268px;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  box-shadow: var(--sh-soft);
+}
+
+.kc-kopdes--wide {
+  width: auto;
+}
+
+.kc-kopdes__media {
+  height: 84px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-soft);
+}
+
+.kc-kopdes__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.kc-kopdes__body {
+  padding: var(--sp-md);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kc-kopdes__name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.kc-kopdes__name a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kc-kopdes__sub {
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kc-kopdes__acts {
+  display: flex;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-md);
+}
+
+.kc-kopdes__acts > * {
+  flex: 1;
+  min-width: 0;
+  padding: 0 var(--sp-sm);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+/* Gambar sampul di halaman detail Kopdes. */
+.kc-kopdes__media--hero {
+  height: 200px;
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+/* Lencana terverifikasi: mengikuti baris teks, bukan kolom flex tersendiri —
+   pada judul yang membungkus dua baris, flex melemparnya ke ujung kanan. */
+.kc-verified {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 6px;
+  color: var(--primary);
+}
+
+/* Paragraf deskripsi bebas. */
+.kc-prose {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--body);
+}
+
+/* Baris informasi berikon di halaman detail. */
+.kc-inforow {
+  display: flex;
+  gap: var(--sp-md);
+  padding: var(--sp-sm) 0;
+  align-items: flex-start;
+}
+
+.kc-inforow + .kc-inforow {
+  border-top: 1px solid var(--hairline-soft);
+}
+
+.kc-inforow__icon {
+  flex: none;
+  color: var(--muted);
+  padding-top: 2px;
+}
+
+.kc-inforow__label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.kc-inforow__value {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+/* Ajakan menyalakan lokasi di bawah rail Kopdes. */
+.kc-locate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: var(--sp-sm);
+  padding: 0 var(--sp-md);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--body);
+}
+
+.kc-locate:disabled {
+  opacity: 0.6;
+}
+
+/* Baris meta: rating · jarak · buka/tutup. */
+.kc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.kc-meta__part,
+.kc-meta__part > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.kc-meta__part > span[aria-hidden='true'] {
+  margin-inline: 4px 1px;
+}
+
+.kc-meta__rating {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.kc-meta__rating svg {
+  color: var(--yellow-accent);
+  fill: currentColor;
+}
+
+.kc-meta__open {
+  color: var(--success);
+  font-weight: 600;
 }
 
 /* ── Tile kategori (AppleMenuTile) ───────────────────────────────────── */

@@ -17,10 +17,14 @@ import type {
   Category,
   DashboardSummary,
   FinanceSummary,
+  Koperasi,
+  KoperasiDetail,
   MarketplaceFilter,
   MarketplaceProduct,
+  NearbyQuery,
   Order,
   PageMeta,
+  Paginated,
   PaymentMethod,
   Product,
   ProductListResult,
@@ -201,6 +205,28 @@ export function createApiClient({
   // Ambil field tertentu dari envelope (default 'data').
   function pick<T>(body: JsonBody, key = 'data'): T {
     return (body?.[key] ?? body) as T;
+  }
+
+  /**
+   * Backend menamai larik hasilnya `koperasi`, bukan `items`, dan menaruh
+   * metadata paginasi sejajar dengannya. Dipetakan sekali di sini supaya
+   * setiap layar membaca bentuk `Paginated` yang sama seperti katalog.
+   */
+  function koperasiPage(
+    body: JsonBody,
+    page: number,
+    limit: number,
+  ): Paginated<Koperasi> {
+    const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
+    return {
+      items: asArray<Koperasi>(data.koperasi),
+      meta: {
+        total: Number(data.total ?? 0),
+        page: Number(data.page ?? page),
+        limit: Number(data.limit ?? limit),
+        totalPages: Number(data.totalPages ?? 1),
+      },
+    };
   }
 
   async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -431,6 +457,36 @@ export function createApiClient({
         } as PageMeta,
       };
     },
+    // ── Kopdes (publik) ──
+    // Dua endpoint, satu bentuk hasil: `/koperasi/nearby` butuh koordinat dan
+    // menyertakan jarak, `/koperasi` dipakai saat izin lokasi tidak ada.
+    getNearbyKoperasi: async (query: NearbyQuery, page = 1, limit = 10) =>
+      koperasiPage(
+        await rawRequest(
+          `/koperasi/nearby${toQuery({
+            latitude: query.latitude,
+            longitude: query.longitude,
+            radius: query.radiusKm ?? 10,
+            page,
+            limit,
+            ...(query.search ? { search: query.search } : {}),
+            ...(query.openNow ? { openNow: 'true' } : {}),
+          })}`,
+        ),
+        page,
+        limit,
+      ),
+    getKoperasiList: async (search = '', page = 1, limit = 10) =>
+      koperasiPage(
+        await rawRequest(
+          `/koperasi${toQuery({ page, limit, ...(search ? { search } : {}) })}`,
+        ),
+        page,
+        limit,
+      ),
+    getKoperasi: (id: string) =>
+      request<KoperasiDetail>(`/koperasi/${encodeURIComponent(id)}`),
+
     getCategories: () => request<Category[]>('/categories'),
     /// Detail produk Mitra UMKM — endpoint terpisah dari produk Kopdes.
     getUmkmProduct: (id: string) =>
@@ -713,6 +769,9 @@ export type ApiClient = ReturnType<typeof createApiClient>;
 export type {
   Address,
   AssignableRole,
+  Koperasi,
+  KoperasiDetail,
+  NearbyQuery,
   PaymentAction,
   PaymentMethodCode,
   PaymentSnapshot,
@@ -735,6 +794,7 @@ export type {
   PaymentMethod,
   Product,
   ProductListResult,
+  RatingSummary,
   Review,
   ReviewableItem,
   Role,

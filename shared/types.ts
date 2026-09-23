@@ -183,6 +183,53 @@ export interface Paginated<T> {
   meta: PageMeta;
 }
 
+// ── Kopdes (GET /koperasi, /koperasi/nearby, /koperasi/:id) ──
+
+/**
+ * Satu Koperasi Desa. Bentuknya mengikuti `CARD_SELECT` di
+ * `koperasi.service.ts`, ditambah tiga field turunan yang dihitung server:
+ * `distanceMeters`/`distanceLabel` (hanya pada endpoint terdekat) dan
+ * `isOpen` (dari jam operasional).
+ */
+export interface Koperasi {
+  id: string;
+  name: string;
+  description?: string | null;
+  logoUrl?: string | null;
+  imageUrl?: string | null;
+  address: string;
+  village: string;
+  district: string;
+  city: string;
+  province: string;
+  latitude: number;
+  longitude: number;
+  phone?: string | null;
+  serviceCategories: string[];
+  isVerified: boolean;
+  /** Jarak selalu dari server; jarak kiriman klien tidak pernah dipercaya. */
+  distanceMeters?: number | null;
+  distanceLabel?: string | null;
+  /** `null` berarti jam operasional belum diisi — bukan "tutup". */
+  isOpen?: boolean | null;
+  rating: RatingSummary;
+}
+
+export interface KoperasiDetail extends Koperasi {
+  postalCode?: string | null;
+  productCount: number;
+  umkmCount: number;
+}
+
+/** Radius dibatasi 50 km di backend (`MAX_RADIUS_KM`). */
+export interface NearbyQuery {
+  latitude: number;
+  longitude: number;
+  radiusKm?: number;
+  search?: string;
+  openNow?: boolean;
+}
+
 // ── Marketplace (GET /marketplace/products) ──
 
 /**

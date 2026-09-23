@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { publicApi } from '@/lib/api';
 import { HomeHero } from '@/components/HomeHero';
+import { NearbyKopdes } from '@/components/NearbyKopdes';
 import { Card, Message, SectionHeader } from '@shared/design/ui';
 import {
   categoryIcon,
@@ -56,7 +57,9 @@ export default async function HomePage() {
 
   return (
     <div className="stack-lg">
-      <HomeHero />
+      <HomeHero>
+        <NearbyKopdes />
+      </HomeHero>
 
       {categories.length > 0 && (
         <section>

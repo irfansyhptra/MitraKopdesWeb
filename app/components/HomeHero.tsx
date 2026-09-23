@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -32,7 +32,7 @@ import type { LucideIcon } from '@shared/design/icons';
  * gunanya menunggu JavaScript untuk menggambarnya.
  */
 
-export function HomeHero() {
+export function HomeHero({ children }: { children?: ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [cartCount, setCartCount] = useState(0);
@@ -138,6 +138,8 @@ export function HomeHero() {
           </button>
         </form>
       </header>
+
+      {children}
 
       <Card className="stack-md">
         <div className="kc-summary">
