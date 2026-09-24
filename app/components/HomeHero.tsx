@@ -129,7 +129,7 @@ export function HomeHero({ children }: { children?: ReactNode }) {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari produk kebutuhanmu..."
+              placeholder="Cari produk kebutuhanmu…"
             />
           </label>
           <button type="submit" className="kc-hero__filter">

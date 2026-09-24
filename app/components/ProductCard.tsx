@@ -1,10 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import {
+  isFavorite,
+  subscribeFavorites,
+  toggleFavorite,
+} from '@/lib/favorites';
 import { Badge, SellerBadge } from '@shared/design/ui';
-import { Package, Plus, Star } from '@shared/design/icons';
+import { Heart, Package, Plus, Star } from '@shared/design/icons';
 import { formatRupiah, toRupiah } from '@shared/format';
 import type { MarketplaceProduct } from '@shared/api';
 
@@ -64,6 +69,10 @@ export function ProductCard({ product }: { product: MarketplaceProduct }) {
         </span>
       </Link>
 
+      {/* Di luar <Link>: tombol di dalam tautan membuat markup yang tidak
+          sah dan menekan hatinya akan ikut membuka halaman produk. */}
+      <FavoriteButton id={product.id} name={product.name} />
+
       <div className="kc-product__body">
         <Link href={href} className="kc-product__name">
           {product.name}
@@ -119,5 +128,40 @@ export function ProductCard({ product }: { product: MarketplaceProduct }) {
         </span>
       </div>
     </article>
+  );
+}
+
+/**
+ * Tombol favorit.
+ *
+ * Statusnya dibaca lewat `useSyncExternalStore`, bukan `useEffect` + state:
+ * dengan begitu render pertama di server dan di klien sepakat (server selalu
+ * "belum difavoritkan", karena penyimpanannya milik peramban), dan setiap
+ * kartu ikut berubah ketika produk yang sama difavoritkan dari kartu lain.
+ */
+function FavoriteButton({ id, name }: { id: string; name: string }) {
+  const subscribe = useCallback(
+    (listener: () => void) => subscribeFavorites(listener),
+    [],
+  );
+  const favorite = useSyncExternalStore(
+    subscribe,
+    () => isFavorite(id),
+    () => false,
+  );
+
+  return (
+    <button
+      type="button"
+      className="kc-fav"
+      // Statusnya diucapkan, bukan hanya ditandai hati penuh/kosong.
+      aria-pressed={favorite}
+      aria-label={
+        favorite ? `Hapus ${name} dari favorit` : `Simpan ${name} ke favorit`
+      }
+      onClick={() => toggleFavorite(id)}
+    >
+      <Heart size={16} aria-hidden="true" />
+    </button>
   );
 }

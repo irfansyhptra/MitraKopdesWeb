@@ -136,9 +136,15 @@ export default function KopdesListPage() {
         <span className="visually-hidden">Cari Kopdes atau desa</span>
         <input
           type="search"
+          name="q"
+          // Kolom pencarian bukan kolom data pribadi: pelengkapan otomatis
+          // dan pemeriksaan ejaan hanya mengganggu.
+          autoComplete="off"
+          spellCheck={false}
+          enterKeyHint="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari Kopdes atau desa..."
+          placeholder="Cari Kopdes atau desa…"
         />
       </label>
 

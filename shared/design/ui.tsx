@@ -166,9 +166,11 @@ export function Chip({
     <button
       type="button"
       className="kc-chip"
-      // `aria-selected` sekaligus menjadi penanda gaya dan status yang
-      // dibacakan pembaca layar — satu sumber, bukan kelas terpisah.
-      aria-selected={selected}
+      // `aria-pressed`, bukan `aria-selected`: yang terakhir hanya sah pada
+      // peran tab/option/gridcell/row, sementara ini tombol biasa. Atributnya
+      // sekaligus jadi penanda gaya, jadi tidak ada kelas terpisah yang bisa
+      // berbeda dari status yang dibacakan pembaca layar.
+      aria-pressed={selected}
       onClick={onClick}
     >
       {children}

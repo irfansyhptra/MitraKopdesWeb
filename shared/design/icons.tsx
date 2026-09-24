@@ -40,6 +40,7 @@ export {
   LogOut,
   // Identitas & status
   BadgeCheck,
+  Heart,
   MapPin,
   Navigation,
   Mail,

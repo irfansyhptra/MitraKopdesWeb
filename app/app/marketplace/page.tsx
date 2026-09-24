@@ -10,13 +10,13 @@ import {
   Building2,
   categoryIcon,
   LayoutGrid,
+  MapPin,
   Navigation,
   Search,
   ShoppingBasket,
   SlidersHorizontal,
   Store,
   tintAt,
-  Utensils,
   type LucideIcon,
 } from '@shared/design/icons';
 import { readSellerType } from './readSellerType';
@@ -228,9 +228,15 @@ function MarketplaceBrowser() {
           <span className="visually-hidden">Cari produk</span>
           <input
             type="search"
+            name="q"
+            // Kolom pencarian bukan kolom data pribadi: pelengkapan otomatis
+            // dan pemeriksaan ejaan hanya mengganggu.
+            autoComplete="off"
+            spellCheck={false}
+            enterKeyHint="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Cari produk kebutuhanmu..."
+            placeholder="Cari produk kebutuhanmu…"
           />
         </label>
         <button
@@ -245,7 +251,6 @@ function MarketplaceBrowser() {
 
       <CategoryRow
         title="Filter Makanan"
-        icon={Utensils}
         categories={categories.filter((c) => c.group === 'FOOD')}
         selectedId={filter.categoryId ?? null}
         onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id ?? undefined }))}
@@ -253,7 +258,6 @@ function MarketplaceBrowser() {
 
       <CategoryRow
         title="Filter Barang Ritel"
-        icon={ShoppingBasket}
         categories={categories.filter((c) => c.group === 'RETAIL')}
         selectedId={filter.categoryId ?? null}
         onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id ?? undefined }))}
@@ -262,6 +266,24 @@ function MarketplaceBrowser() {
       <section>
         <div className="kc-section-head">
           <h2 className="kc-section-head__title">Pilih Tempat Belanja</h2>
+          {/* Lokasi duduk di kepala section, sama seperti di aplikasi:
+              ia keterangan dari pilihan di bawahnya, bukan baris tersendiri. */}
+          <button
+            type="button"
+            className="kc-locationbtn"
+            onClick={() => selectSource('NEAREST')}
+            disabled={locating}
+          >
+            <MapPin size={14} aria-hidden="true" />
+            <span className="kc-locationbtn__name">
+              {locating
+                ? 'Mencari lokasi…'
+                : filter.latitude != null
+                  ? 'Lokasi Anda'
+                  : 'Pilih lokasi'}
+            </span>
+            <span className="kc-locationbtn__action">Ubah</span>
+          </button>
         </div>
         <SourceSelector active={source} onSelect={selectSource} />
         <p className="kc-hint">
@@ -353,14 +375,16 @@ function MarketplaceBrowser() {
  * itulah yang tampil. Gagal memuatnya tidak menghentikan katalog.
  */
 function PromoBanner() {
-  const [banner, setBanner] = useState<Banner | null>(null);
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [active, setActive] = useState(0);
+  const rail = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
     publicApi
       .getBanners()
       .then((list) => {
-        if (!cancelled && list?.length) setBanner(list[0]);
+        if (!cancelled && list?.length) setBanners(list);
       })
       .catch(() => undefined);
     return () => {
@@ -368,44 +392,96 @@ function PromoBanner() {
     };
   }, []);
 
-  const item = banner ?? {
-    id: 'default',
-    badge: 'PROMO HARI INI',
-    title: 'Belanja Hemat di',
-    highlight: 'KMP Mitra',
-    description: 'Produk Kopdes dan UMKM pilihan untuk kebutuhan keluarga',
-    ctaLabel: 'Belanja Sekarang',
-    ctaRoute: '/marketplace',
-  };
+  // Satu iklan bawaan sebagai cadangan; begitu admin memasang banner, banner
+  // itulah yang tampil.
+  const items: Banner[] = banners.length
+    ? banners
+    : [
+        {
+          id: 'default',
+          badge: 'PROMO HARI INI',
+          title: 'Belanja Hemat di',
+          highlight: 'KMP Mitra',
+          description: 'Produk Kopdes dan UMKM pilihan untuk kebutuhan keluarga',
+          ctaLabel: 'Belanja Sekarang',
+          ctaRoute: '/marketplace',
+        },
+      ];
+
+  /**
+   * Indikator halaman dihitung dari posisi gulir, bukan dari timer.
+   *
+   * Tidak ada auto-scroll seperti di aplikasi: di web, banner yang bergerak
+   * sendiri memindahkan target sentuh tepat saat orang hendak menekannya, dan
+   * satu-satunya banner di database hari ini membuat animasinya tanpa guna.
+   */
+  function onScroll(e: React.UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget;
+    const next = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
+    if (next !== active) setActive(next);
+  }
 
   return (
-    <Link href={item.ctaRoute || '/marketplace'} className="kc-promobanner">
-      <span className="kc-promobanner__text">
-        {item.badge && <span className="kc-promobanner__badge">{item.badge}</span>}
-        <span className="kc-promobanner__title">
-          {item.title} {item.highlight && <em>{item.highlight}</em>}
-        </span>
-        {item.description && (
-          <span className="kc-promobanner__body">{item.description}</span>
-        )}
-        <span className="kc-promobanner__cta">
-          {item.ctaLabel || 'Belanja Sekarang'}
-          <ArrowLeft
-            size={15}
-            aria-hidden="true"
-            style={{ transform: 'rotate(180deg)' }}
-          />
-        </span>
-      </span>
-      <span className="kc-promobanner__art" aria-hidden="true">
-        {item.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.imageUrl} alt="" />
-        ) : (
-          <ShoppingBasket size={26} />
-        )}
-      </span>
-    </Link>
+    <div>
+      <div className="kc-promorail" onScroll={onScroll} ref={rail}>
+        {items.map((item) => (
+          <Link
+            key={item.id}
+            href={item.ctaRoute || '/marketplace'}
+            className="kc-promobanner"
+          >
+            <span className="kc-promobanner__text">
+              {item.badge && (
+                <span className="kc-promobanner__badge">{item.badge}</span>
+              )}
+              <span className="kc-promobanner__title">
+                {item.title} {item.highlight && <em>{item.highlight}</em>}
+              </span>
+              {item.description && (
+                <span className="kc-promobanner__body">{item.description}</span>
+              )}
+              <span className="kc-promobanner__cta">
+                {item.ctaLabel || 'Belanja Sekarang'}
+                <ArrowLeft
+                  size={15}
+                  aria-hidden="true"
+                  style={{ transform: 'rotate(180deg)' }}
+                />
+              </span>
+            </span>
+            <span className="kc-promobanner__art" aria-hidden="true">
+              {item.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.imageUrl} alt="" />
+              ) : (
+                <ShoppingBasket size={30} />
+              )}
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      {/* Indikator hanya berarti bila ada lebih dari satu iklan. Titiknya
+          tombol sungguhan, bukan hiasan — pada penunjuk kasar, menggeser
+          bukan satu-satunya cara berpindah. */}
+      {items.length > 1 && (
+        <div className="kc-dots">
+          {items.map((item, i) => (
+            <button
+              key={item.id}
+              type="button"
+              className="kc-dots__dot"
+              aria-label={`Iklan ${i + 1} dari ${items.length}`}
+              aria-current={i === active}
+              onClick={() => {
+                const el = rail.current;
+                if (el) el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -443,13 +519,11 @@ function SourceSelector({
  */
 function CategoryRow({
   title,
-  icon: TitleIcon,
   categories,
   selectedId,
   onSelect,
 }: {
   title: string;
-  icon: LucideIcon;
   categories: Category[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
@@ -459,16 +533,13 @@ function CategoryRow({
   return (
     <section>
       <div className="kc-section-head">
-        <h2 className="kc-section-head__title kc-section-head__title--icon">
-          <TitleIcon size={17} aria-hidden="true" />
-          {title}
-        </h2>
+        <h2 className="kc-section-head__title">{title}</h2>
       </div>
       <div className="kc-rail">
         <button
           type="button"
           className="kc-filtercard"
-          aria-selected={selectedId === null}
+          aria-pressed={selectedId === null}
           onClick={() => onSelect(null)}
           style={{ ['--tile-tint' as string]: 'var(--primary)' }}
         >
@@ -486,7 +557,7 @@ function CategoryRow({
               key={cat.id}
               type="button"
               className="kc-filtercard"
-              aria-selected={active}
+              aria-pressed={active}
               onClick={() => onSelect(active ? null : cat.id)}
               style={{ ['--tile-tint' as string]: tintAt(i) }}
             >

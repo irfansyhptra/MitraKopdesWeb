@@ -149,7 +149,10 @@
   background: var(--surface-soft);
 }
 
+/* Chip dipakai dua cara: sebagai tab (aria-selected, di dalam tablist) dan
+   sebagai tombol dua-keadaan (aria-pressed). Keduanya tampak sama. */
 .kc-chip[aria-selected='true'],
+.kc-chip[aria-pressed='true'],
 .kc-chip--selected {
   background: var(--primary);
   border-color: var(--primary);
@@ -213,6 +216,8 @@
 
 /* ── Kartu produk (AppleProductTile) ── */
 .kc-product {
+  /* Jangkar bagi tombol favorit yang mengambang di atas gambar. */
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--canvas);
@@ -272,6 +277,8 @@
 }
 
 .kc-product__price {
+  /* Angka selebar sama supaya harga di grid sejajar dan mudah dibandingkan. */
+  font-variant-numeric: tabular-nums;
   font-size: 15px;
   font-weight: 800;
   color: var(--primary);
@@ -644,6 +651,14 @@
   text-align: left;
 }
 
+/* Inputnya mematikan outline sendiri, jadi cincin fokusnya dipindah ke
+   pembungkusnya — tanpa ini kolom pencarian tidak punya penanda fokus sama
+   sekali bagi pengguna papan tuts. */
+.kc-hero__field:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .kc-hero__field input {
   flex: 1;
   min-width: 0;
@@ -849,6 +864,9 @@
   max-width: 560px;
   max-height: 88vh;
   overflow-y: auto;
+  /* Sampai ujung daftar, gulirnya berhenti di modal — tidak menular ke
+     halaman di belakangnya. */
+  overscroll-behavior: contain;
   padding: var(--sp-md) var(--page-padding) var(--sp-lg);
   border-radius: var(--r-modal) var(--r-modal) 0 0;
   background: var(--canvas);
@@ -1045,6 +1063,118 @@
   flex: 1;
 }
 
+/* ── Marketplace: rail iklan + indikator ─────────────────────────────── */
+.kc-promorail {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.kc-promorail::-webkit-scrollbar {
+  display: none;
+}
+
+.kc-promorail > * {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+}
+
+.kc-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: var(--sp-sm);
+}
+
+/* Titiknya kecil, tetapi target sentuhnya tidak: area 24px dengan titik 6px
+   di tengahnya. */
+.kc-dots__dot {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.kc-dots__dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--hairline);
+  transition: width var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+
+.kc-dots__dot[aria-current='true']::before {
+  width: 16px;
+  background: var(--primary);
+}
+
+/* ── Marketplace: tombol lokasi di kepala section ────────────────────── */
+.kc-locationbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  max-width: 190px;
+  padding-left: var(--sp-sm);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.kc-locationbtn svg {
+  flex: none;
+  color: var(--primary);
+}
+
+.kc-locationbtn__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.kc-locationbtn__action {
+  flex: none;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.kc-locationbtn:disabled .kc-locationbtn__action {
+  opacity: 0.5;
+}
+
+/* Pada layar sangat sempit judul section yang menang, bukan lokasinya. */
+@media (max-width: 359px) {
+  .kc-locationbtn__name {
+    display: none;
+  }
+}
+
+/* ── Marketplace: tombol favorit di kartu produk ─────────────────────── */
+.kc-fav {
+  position: absolute;
+  top: var(--sp-xs);
+  right: var(--sp-xs);
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--sh-soft);
+  color: var(--muted);
+}
+
+.kc-fav[aria-pressed='true'] {
+  color: var(--primary);
+}
+
+.kc-fav[aria-pressed='true'] svg {
+  fill: currentColor;
+}
+
 /* ── Marketplace: kartu filter kategori (FilterOptionCard) ────────────
    Ikon berwarna di atas, label dua baris di bawah, aktif berisi merah —
    sama dengan `FilterOptionCard` di aplikasi. */
@@ -1065,7 +1195,7 @@
   text-align: center;
 }
 
-.kc-filtercard[aria-selected='true'] {
+.kc-filtercard[aria-pressed='true'] {
   background: var(--primary);
   border-color: var(--primary);
   box-shadow: none;
@@ -1083,7 +1213,7 @@
   color: var(--tile-tint, var(--primary));
 }
 
-.kc-filtercard[aria-selected='true'] .kc-filtercard__icon {
+.kc-filtercard[aria-pressed='true'] .kc-filtercard__icon {
   background: rgba(255, 255, 255, 0.2);
   color: var(--on-primary);
 }
@@ -1099,9 +1229,12 @@
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* "Kesehatan & Kecantikan" lebih panjang daripada kartunya: katanya
+     dipecah, bukan dipotong di tengah menjadi "Kesehata Kecantik". */
+  overflow-wrap: anywhere;
 }
 
-.kc-filtercard[aria-selected='true'] .kc-filtercard__label {
+.kc-filtercard[aria-pressed='true'] .kc-filtercard__label {
   color: var(--on-primary);
   font-weight: 600;
 }
@@ -1143,9 +1276,19 @@
   font-weight: 600;
 }
 
-/* Di bawah 420px empat segmen berdampingan memotong labelnya; di situ
-   deretannya digulir seperti di aplikasi. */
+/* Pada layar sempit segmennya dirapatkan — padding dan jarak ikonnya
+   dikecilkan — supaya keempat pilihan tetap terlihat sekaligus. Menggulirnya
+   akan menyembunyikan "Terdekat", pilihan yang paling sering dicari. */
 @media (max-width: 419px) {
+  .kc-segmented button {
+    gap: 3px;
+    padding: 0 var(--sp-xs);
+    font-size: 11.5px;
+  }
+}
+
+/* Di bawah 330px keempatnya memang tidak muat; di situ barisnya digulir. */
+@media (max-width: 329px) {
   .kc-segmented {
     overflow-x: auto;
     scrollbar-width: none;
@@ -1246,6 +1389,38 @@
 @media (max-width: 359px) {
   .kc-promobanner__art {
     display: none;
+  }
+}
+
+/* Di layar lebar teksnya tidak diregangkan sampai selebar halaman — kalimat
+   sepanjang itu tidak terbaca — dan gambarnya yang tumbuh mengisi sisanya. */
+@media (min-width: 600px) {
+  .kc-promobanner {
+    padding: var(--sp-lg);
+  }
+
+  .kc-promobanner__text {
+    max-width: 30rem;
+  }
+
+  .kc-promobanner__art {
+    width: 96px;
+    height: 96px;
+  }
+
+  .kc-promobanner__title {
+    font-size: 21px;
+  }
+
+  .kc-promobanner__body {
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .kc-promobanner__art {
+    width: 124px;
+    height: 124px;
   }
 }
 
