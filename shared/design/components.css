@@ -928,6 +928,20 @@
 }
 
 /* ── Detail Kopdes: pelayanan, jam buka, keanggotaan ─────────────────── */
+/* Keadaan kosong di dalam sebuah section: fieldnya tetap ada, isinya yang
+   belum. Menyembunyikan sectionnya membuat halaman terlihat seolah bagian
+   itu tidak pernah dirancang. */
+.kc-empty {
+  margin-top: var(--sp-md);
+  padding: var(--sp-base);
+  border: 1px dashed var(--hairline);
+  border-radius: var(--r-card);
+  background: var(--canvas);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
 .kc-services {
   display: flex;
   flex-wrap: wrap;
@@ -1407,9 +1421,20 @@
 .kc-inforow__value {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   font-size: 14px;
   color: var(--ink);
   line-height: 1.45;
+}
+
+/* Nomor telepon di sini adalah tautan `tel:`; setinggi teksnya saja ia
+   hanya 20px dan sulit ditekan di ponsel. */
+.kc-inforow__value a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--primary);
+  font-weight: 600;
 }
 
 /* Ajakan menyalakan lokasi di bawah rail Kopdes. */

@@ -41,18 +41,27 @@ async function getKopdes(id: string): Promise<KoperasiDetail | null> {
  * itu yang dimaksud "produk yang dijual" sebuah Kopdes.
  *
  * Disaring server lewat `kopdesId`; katalog penuh tidak pernah diunduh lalu
- * dibuang di browser. Gagal memuatnya tidak mengosongkan halaman.
+ * dibuang di browser.
+ *
+ * Kegagalan dibedakan dari "belum ada barang", dan keduanya tidak sama dengan
+ * "tidak ada apa-apa": versi sebelumnya mengembalikan larik kosong pada kedua
+ * keadaan, sehingga seluruh section hilang dari halaman tanpa jejak. Itulah
+ * yang terjadi ketika backend belum mengenal `kopdesId` dan menjawab 400.
  */
-async function getProducts(kopdesId: string): Promise<MarketplaceProduct[]> {
+type ProductsResult =
+  | { ok: true; items: MarketplaceProduct[] }
+  | { ok: false; reason: string };
+
+async function getProducts(kopdesId: string): Promise<ProductsResult> {
   try {
     const page = await publicApi.getMarketplaceProducts(
       { kopdesId, sellerType: 'ALL', sort: 'newest' },
       1,
       8,
     );
-    return page.items;
-  } catch {
-    return [];
+    return { ok: true, items: page.items };
+  } catch (error) {
+    return { ok: false, reason: (error as Error).message };
   }
 }
 
@@ -90,7 +99,9 @@ export default async function KopdesDetailPage({
 }) {
   const { id } = await params;
   const kopdes = await getKopdes(id);
-  const products = kopdes ? await getProducts(id) : [];
+  const products = kopdes
+    ? await getProducts(id)
+    : ({ ok: true, items: [] } as ProductsResult);
 
   if (!kopdes) {
     return (
@@ -155,9 +166,15 @@ export default async function KopdesDetailPage({
         </div>
       </div>
 
-      {kopdes.serviceCategories.length > 0 && (
-        <section>
-          <h2 className="kc-section-head__title">Pelayanan yang Disediakan</h2>
+      <section>
+        <h2 className="kc-section-head__title">Pelayanan yang Disediakan</h2>
+        {kopdes.serviceCategories.length === 0 ? (
+          // Kosong bukan berarti tidak ada layanan, melainkan belum diisi
+          // pengurus — dan itu dikatakan apa adanya.
+          <p className="kc-empty">
+            Pengurus koperasi belum mengisi daftar pelayanan.
+          </p>
+        ) : (
           <div className="kc-services">
             {kopdes.serviceCategories.map((service, i) => {
               const Icon = categoryIcon(service);
@@ -175,35 +192,58 @@ export default async function KopdesDetailPage({
               );
             })}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       <OpeningHours hours={kopdes.operatingHours} isOpen={kopdes.isOpen} />
 
       <MembershipCard
         kopdesId={kopdes.id}
         kopdesName={kopdes.name}
-        memberCount={kopdes.memberCount ?? 0}
+        memberCount={kopdes.memberCount}
       />
 
-      {products.length > 0 && (
-        <section>
-          <div className="kc-section-head">
-            <h2 className="kc-section-head__title">Produk yang Dijual</h2>
+      <section>
+        <div className="kc-section-head">
+          <h2 className="kc-section-head__title">Produk yang Dijual</h2>
+          {kopdes.productCount > 0 && (
             <Link
               className="kc-section-head__action"
               href={`/marketplace?kopdesId=${kopdes.id}`}
             >
               Lihat Semua
             </Link>
-          </div>
+          )}
+        </div>
+
+        {products.ok && products.items.length > 0 && (
           <div className="kc-grid">
-            {products.map((product) => (
+            {products.items.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
-        </section>
-      )}
+        )}
+
+        {products.ok && products.items.length === 0 && (
+          <p className="kc-empty">
+            Koperasi ini belum memasang barang di etalase.
+          </p>
+        )}
+
+        {/* Bukan "tidak ada barang": jumlahnya diketahui dari detail
+            koperasi, hanya daftarnya yang gagal diambil. Menyembunyikan
+            section justru membuat halaman terlihat seolah koperasi ini tidak
+            berjualan sama sekali. */}
+        {!products.ok && (
+          <p className="kc-empty">
+            Daftar barang belum berhasil dimuat
+            {kopdes.productCount > 0
+              ? `, padahal koperasi ini punya ${kopdes.productCount} barang. `
+              : '. '}
+            Buka Marketplace untuk melihatnya.
+          </p>
+        )}
+      </section>
 
       <Card>
         <InfoRow icon={<MapPin size={16} />} label="Alamat">
@@ -254,7 +294,7 @@ function OpeningHours({
   hours: KoperasiDetail['operatingHours'];
   isOpen?: boolean | null;
 }) {
-  if (!hours || Object.keys(hours).length === 0) return null;
+  const filled = hours && Object.keys(hours).length > 0;
 
   return (
     <section>
@@ -263,16 +303,23 @@ function OpeningHours({
           <Clock size={17} aria-hidden="true" />
           Jam Operasional
         </h2>
-        {isOpen != null && (
+        {filled && isOpen != null && (
           <Badge variant={isOpen ? 'success' : 'muted'}>
             {isOpen ? 'Buka sekarang' : 'Tutup sekarang'}
           </Badge>
         )}
       </div>
+      {!filled && (
+        <p className="kc-empty">
+          Pengurus koperasi belum mengisi jam operasional.
+        </p>
+      )}
+
+      {filled && (
       <Card>
         <dl className="kc-hours">
           {DAYS.map(([key, label]) => {
-            const day = hours[key];
+            const day = hours?.[key] ?? null;
             return (
               <div key={key} className="kc-hours__row">
                 <dt>{label}</dt>
@@ -284,6 +331,7 @@ function OpeningHours({
           })}
         </dl>
       </Card>
+      )}
     </section>
   );
 }

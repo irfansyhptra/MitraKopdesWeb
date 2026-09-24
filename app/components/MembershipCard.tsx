@@ -26,7 +26,8 @@ export function MembershipCard({
 }: {
   kopdesId: string;
   kopdesName: string;
-  memberCount: number;
+  /** Tidak terdefinisi bila backend belum mengirimkannya — bukan nol. */
+  memberCount?: number;
 }) {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [membership, setMembership] = useState<Membership | null>(null);
@@ -93,9 +94,11 @@ export function MembershipCard({
         <div>
           <h2 className="kc-member__title">Keanggotaan {kopdesName}</h2>
           <p className="kc-member__sub">
-            {memberCount > 0
-              ? `${memberCount} warga sudah menjadi anggota.`
-              : 'Jadilah anggota pertama koperasi desa ini.'}
+            {memberCount === undefined
+              ? 'Daftar untuk menikmati layanan anggota koperasi desa.'
+              : memberCount > 0
+                ? `${memberCount} warga sudah menjadi anggota.`
+                : 'Jadilah anggota pertama koperasi desa ini.'}
           </p>
         </div>
       </div>

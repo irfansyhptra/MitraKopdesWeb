@@ -207,3 +207,19 @@ describe('filter lanjutan marketplace', () => {
     expect(res.items[1].discountPrice).toBeNull();
   });
 });
+
+describe('etalase satu koperasi', () => {
+  it('mengirim kopdesId supaya penyaringannya di server', async () => {
+    const fetchMock = withFetch(EMPTY);
+    await client().getMarketplaceProducts({ kopdesId: 'k1' }, 1, 8);
+    // Halaman detail Kopdes tidak boleh mengunduh katalog seluruh desa lalu
+    // menyaringnya di browser: jumlah barangnya bisa lebih dari satu halaman.
+    expect(paramsOf(fetchMock).get('kopdesId')).toBe('k1');
+  });
+
+  it('tidak mengirim kopdesId ketika tidak diminta', async () => {
+    const fetchMock = withFetch(EMPTY);
+    await client().getMarketplaceProducts({}, 1, 8);
+    expect(paramsOf(fetchMock).has('kopdesId')).toBe(false);
+  });
+});
