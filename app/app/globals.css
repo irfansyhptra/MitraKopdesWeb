@@ -24,11 +24,19 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(255, 255, 255, 0.94);
-  /* Blur hanya di satu tempat — bilah yang selalu tampil. Blur di tiap kartu
-     memaksa save-layer per frame gulir dan itu terasa sebelum terlihat. */
-  backdrop-filter: saturate(180%) blur(12px);
+  /* Kaca dipakai di lapisan yang mengambang di atas isi — bilah atas dan
+     bilah bawah — bukan di tiap kartu: blur per kartu memaksa save-layer
+     setiap frame gulir, dan itu terasa sebelum terlihat. */
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-filter-strong);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
   border-bottom: 1px solid var(--hairline-soft);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .topbar {
+    background: rgba(255, 255, 255, 0.96);
+  }
 }
 
 .topbar__inner {
@@ -88,7 +96,7 @@
 }
 
 .topnav a[aria-current='page'] {
-  color: var(--primary);
+  color: var(--primary-text);
   background: var(--primary-tint);
 }
 
@@ -148,7 +156,8 @@
 /* Ruang untuk bilah bawah supaya isi terakhir tidak tertutup. */
 @media (max-width: 719px) {
   .main {
-    padding-bottom: calc(70px + env(safe-area-inset-bottom) + var(--sp-lg));
+    /* 76px bilah + jarak mengambang + ruang napas. */
+    padding-bottom: calc(76px + env(safe-area-inset-bottom) + var(--sp-xl));
   }
 }
 
@@ -160,15 +169,26 @@
 
 .bottomnav {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   z-index: 30;
   display: flex;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: saturate(180%) blur(12px);
-  border-top: 1px solid var(--hairline-soft);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* Mengambang: menempel di tepi bawah aman, bukan menempel di kaca layar. */
+  left: var(--sp-base);
+  right: var(--sp-base);
+  bottom: calc(var(--sp-md) + env(safe-area-inset-bottom));
+  height: 76px;
+  border-radius: var(--r-2xl);
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-filter-strong);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--sh-floating);
+  overflow: hidden;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .bottomnav {
+    background: rgba(255, 255, 255, 0.96);
+  }
 }
 
 @media (min-width: 720px) {
@@ -179,25 +199,42 @@
 
 .bottomnav a {
   flex: 1;
-  min-height: 70px;
+  min-height: 76px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   font-size: 11px;
   font-weight: 500;
+  /* --muted, bukan --muted-soft: label 11px pada #F5F5F7 hanya 3,33:1
+     dengan yang terakhir. */
   color: var(--muted);
+  transition: color var(--t-fast) var(--ease-out);
 }
 
 .bottomnav a[aria-current='page'] {
   color: var(--primary);
-  font-weight: 700;
+  font-weight: 600;
 }
 
+/* Ikon duduk dalam kapsul yang terisi saat aktif — penanda yang terbaca
+   sekilas tanpa mengandalkan warna teks saja. */
 .bottomnav__icon {
-  font-size: 19px;
+  width: 38px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
   line-height: 1;
+  transition:
+    background var(--t-normal) var(--ease-out),
+    color var(--t-normal) var(--ease-out);
+}
+
+.bottomnav a[aria-current='page'] .bottomnav__icon {
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 /* ── Judul halaman (padanan compact page header) ── */
@@ -477,13 +514,12 @@
 /* Tujuan beraksen pada navigasi bawah — padanan `isAccent` di
    `CustomBottomNavBar`. Aksennya lewat isian solid, bukan warna teks saja. */
 .bottomnav a[data-accent='true'] .bottomnav__icon {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: var(--primary);
   color: var(--on-primary);
+  box-shadow: var(--sh-accent);
 }
 
 .bottomnav a[data-accent='true'][aria-current='page'] .bottomnav__icon {

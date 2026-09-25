@@ -1,43 +1,85 @@
 /*
- * Token desain KOPDES — diport dari `lib/core/theme/theme.dart` pada aplikasi
- * Flutter, supaya web dan mobile memakai angka yang sama, bukan angka yang
- * mirip. Tiap nilai di sini punya pasangannya di Dart; kalau salah satu
- * berubah, keduanya harus berubah.
+ * KMP Mitra Unified Apple Design System — token web.
  *
- * Scaffold web sebelumnya memakai palet hijau (#1f8a4c) sementara aplikasi
- * mobile memakai merah Koperasi Merah Putih — itulah yang diperbaiki file ini.
+ * Satu sumber kebenaran untuk seluruh tampilan. Pasangannya ada di
+ * `lib/core/theme/theme.dart` pada aplikasi Flutter: kalau salah satu berubah,
+ * keduanya harus berubah. Itulah yang membuat web dan mobile terasa satu
+ * produk, bukan dua yang mirip.
+ *
+ * Nama tokennya sengaja dipertahankan dari versi sebelumnya — 717 pemakaian
+ * `var(--*)` di seluruh CSS mewarisi dari sini, jadi menyetel ulang nilainya
+ * mengubah seluruh aplikasi sekaligus. Mengganti namanya hanya menghasilkan
+ * pencarian-ganti raksasa tanpa manfaat.
+ *
+ * Dua penyimpangan sadar dari spesifikasi, beserta alasannya:
+ *
+ * 1. Skala jarak lama dipertahankan (2/4/8/12/16/24/32/48/64). Skalanya sudah
+ *    kelipatan 4 dan hampir identik dengan yang diminta; menggesernya berarti
+ *    menyetel ulang setiap tata letak yang baru saja diverifikasi tidak
+ *    meluber, demi selisih beberapa piksel.
+ * 2. `--body` memakai #424245, bukan #6E6E73. Teks isi pada #6E6E73 di atas
+ *    #F5F5F7 hanya 4,6:1 — lolos tipis dan tidak nyaman di ponsel murah di
+ *    bawah matahari. #6E6E73 tetap dipakai, sebagai `--muted`.
  */
 
 :root {
   /* ── Merah utama (AppColors) ── */
-  --primary: #d32f2f;
-  --primary-active: #b71c1c;
-  --primary-soft: #ffcdd2;
-  --primary-tint: #ffebee;
-  --primary-faint: rgba(211, 47, 47, 0.12);
+  --primary: #e31b23;
+  --primary-active: #c9141c;
+
+  /*
+   * Merah untuk teks di atas permukaan terang.
+   *
+   * `--primary` (#E31B23) hanya 4,34:1 di atas latar halaman #F5F5F7 — di
+   * bawah 4,5:1 yang dituntut teks kecil. Merah gelap sistemnya sendiri
+   * mencapai 5,36:1, jadi identitasnya tidak berubah, hanya keterbacaannya
+   * yang diperbaiki. `--primary` tetap dipakai untuk isian tombol, yang
+   * dipasangkan teks putih (4,72:1).
+   */
+  --primary-text: #c9141c;
+  --primary-soft: rgba(227, 27, 35, 0.1);
+  --primary-tint: rgba(227, 27, 35, 0.06);
+  --primary-faint: rgba(227, 27, 35, 0.12);
   --dark-red: #79000d;
   --bright-red: #ed102d;
   --yellow-accent: #ffc400;
 
   /* ── Teks & garis ── */
-  --ink: #222222;
-  --body: #3f3f3f;
-  --muted: #6a6a6a;
-  --muted-soft: #929292;
-  --hairline: #dddddd;
-  --hairline-soft: #ebebeb;
-  --border-strong: #c1c1c1;
+  --ink: #1d1d1f;
+  --body: #424245;
+  --muted: #6e6e73;
+  --muted-soft: #86868b;
+  --hairline: rgba(0, 0, 0, 0.06);
+  --hairline-soft: rgba(0, 0, 0, 0.04);
+  --border-strong: rgba(0, 0, 0, 0.12);
 
   /* ── Permukaan ── */
   --canvas: #ffffff;
-  --surface-soft: #f7f7f7;
-  --surface-strong: #f2f2f2;
+
+  /*
+   * Kaca. Dipakai untuk kedalaman dan hierarki — bukan hiasan di tiap elemen.
+   * Isinya harus tetap terbaca jelas di atasnya, jadi tidak ada lapisan yang
+   * lebih tembus daripada `--glass-light`.
+   */
+  --glass: rgba(255, 255, 255, 0.68);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --glass-light: rgba(255, 255, 255, 0.48);
+  --glass-border: rgba(255, 255, 255, 0.7);
+
+  --blur-light: 16px;
+  --blur: 24px;
+  --blur-strong: 32px;
+  /* Saturasi dinaikkan supaya warna di balik kaca tidak tampak pudar. */
+  --glass-filter: blur(var(--blur)) saturate(140%);
+  --glass-filter-strong: blur(var(--blur-strong)) saturate(150%);
+  --surface-soft: #f5f5f7;
+  --surface-strong: #f8f8fa;
   --on-primary: #ffffff;
 
   /* ── Status ── */
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --error: #ef4444;
+  --success: #34c759;
+  --warning: #ff9f0a;
+  --error: #ff3b30;
   --error-text: #c13515;
 
   /* ── Lencana penjual (OrderColors di Flutter) ── */
@@ -66,28 +108,38 @@
   --sp-xxl: 48px;
   --sp-section: 64px;
 
-  /* ── Radius (AppRadius) ── */
-  --r-xs: 4px;
-  --r-sm: 8px;
-  --r-md: 14px;
+  /* ── Radius. Permukaan besar dan membulat; tombol berbentuk pil. ── */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 16px;
   --r-lg: 20px;
-  --r-xl: 32px;
-  --r-button: 12px;
-  --r-card: 16px;
-  --r-modal: 24px;
-  --r-pill: 9999px;
+  --r-xl: 24px;
+  --r-2xl: 28px;
+  --r-3xl: 32px;
+  --r-button: 999px;
+  --r-card: 24px;
+  --r-modal: 28px;
+  --r-pill: 999px;
 
-  /* ── Elevasi (AppElevation) ── */
-  --sh-card: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --sh-card-hover: 0 6px 18px rgba(0, 0, 0, 0.1);
-  --sh-hairline: 0 1px 0 rgba(0, 0, 0, 0.04);
-  --sh-soft: 0 1px 3px rgba(0, 0, 0, 0.05);
+  /*
+   * Bayangan. Kartu mengambang sedikit di atas latar, bukan ditindih kotak
+   * gelap — tidak ada satu pun nilai di atas 14% kehitaman.
+   */
+  --sh-subtle: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --sh-soft: 0 8px 30px rgba(0, 0, 0, 0.06);
+  --sh-card: 0 10px 35px rgba(0, 0, 0, 0.055);
+  --sh-floating: 0 18px 50px rgba(0, 0, 0, 0.09);
+  --sh-modal: 0 25px 80px rgba(0, 0, 0, 0.14);
+  --sh-accent: 0 8px 24px rgba(227, 27, 35, 0.18);
+  /* Nama lama dipetakan ke skala baru supaya CSS lama ikut berubah. */
+  --sh-hairline: var(--sh-subtle);
+  --sh-card-hover: var(--sh-floating);
 
   /* ── Animasi (AppAnimation) ── */
-  --t-fast: 150ms;
-  --t-normal: 250ms;
-  --t-slow: 350ms;
-  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --t-fast: 120ms;
+  --t-normal: 180ms;
+  --t-slow: 280ms;
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   /* Gerak yang masuk atau berubah melambat di ujungnya — terasa berhenti
      sendiri, bukan direm. `--ease` yang lama juga mempercepat di awal, yang
      membuat perubahan kecil seperti hover terasa ragu. */
@@ -141,13 +193,81 @@
 }
 
 html {
-  /* Ukuran judul mengikuti lebar layar, bukan melompat di breakpoint. Batas
-   bawah dan atasnya tetap dipatok supaya tidak pernah lebih kecil daripada
-   yang terbaca maupun selebar spanduk di desktop. */
+  /*
+ * Skala teks.
+ *
+ * Satu nilai untuk semua lebar: `clamp()` menjembatani angka mobile dan
+ * desktop dari sistem desain, jadi tidak ada lompatan di breakpoint dan tidak
+ * ada dua tabel ukuran yang harus dijaga tetap sama.
+ *
+ * Hierarki dibawa oleh bobot dan jarak, bukan oleh judul raksasa — batas
+ * atasnya sengaja ditahan.
+ */
 :root {
-  --fs-page-title: clamp(1.5rem, 1.25rem + 1.2vw, 2rem);
-  --fs-section-title: clamp(1rem, 0.94rem + 0.3vw, 1.125rem);
-  --fs-banner-title: clamp(1.0625rem, 0.95rem + 0.6vw, 1.375rem);
+  --fs-display: clamp(2rem, 1.75rem + 1.2vw, 2.25rem);
+  --fs-h1: clamp(1.625rem, 1.5rem + 0.6vw, 1.75rem);
+  --fs-h2: clamp(1.375rem, 1.35rem + 0.1vw, 1.375rem);
+  --fs-h3: clamp(1.0625rem, 1.05rem + 0.05vw, 1.0625rem);
+  --fs-body: 0.9375rem;
+  --fs-caption: 0.8125rem;
+  --fs-small: 0.75rem;
+
+  --lh-display: 1.12;
+  --lh-heading: 1.25;
+  --lh-body: 1.5;
+
+  --ls-display: -0.05em;
+  --ls-h1: -0.025em;
+  --ls-h2: -0.018em;
+  --ls-h3: -0.008em;
+
+  /* Nama lama, dipetakan ke skala baru. */
+  --fs-page-title: var(--fs-h1);
+  --fs-section-title: var(--fs-h3);
+  --fs-banner-title: var(--fs-h3);
+}
+
+/*
+ * Permukaan kaca.
+ *
+ * Satu kelas, tiga tingkat. Dipakai bersama supaya tidak ada komponen yang
+ * meracik `backdrop-filter` sendiri dengan angka yang sedikit berbeda.
+ */
+.glass,
+.glass-strong,
+.glass-light {
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+  border: 1px solid var(--glass-border);
+}
+
+.glass {
+  background: var(--glass);
+}
+
+.glass-strong {
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-filter-strong);
+  -webkit-backdrop-filter: var(--glass-filter-strong);
+}
+
+.glass-light {
+  background: var(--glass-light);
+  backdrop-filter: blur(var(--blur-light)) saturate(130%);
+  -webkit-backdrop-filter: blur(var(--blur-light)) saturate(130%);
+}
+
+/*
+ * Peramban tanpa `backdrop-filter` (Firefox lama, mode hemat daya) akan
+ * menampilkan kaca sebagai lapisan setengah tembus tanpa blur — isinya jadi
+ * sulit dibaca. Di situ permukaannya dibuat pekat.
+ */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass,
+  .glass-strong,
+  .glass-light {
+    background: rgba(255, 255, 255, 0.96);
+  }
 }
 
 /* Skala teks pengguna tidak pernah dimatikan — sama dengan aturan
