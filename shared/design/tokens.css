@@ -88,6 +88,10 @@
   --t-normal: 250ms;
   --t-slow: 350ms;
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Gerak yang masuk atau berubah melambat di ujungnya — terasa berhenti
+     sendiri, bukan direm. `--ease` yang lama juga mempercepat di awal, yang
+     membuat perubahan kecil seperti hover terasa ragu. */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
 
   /*
    * Breakpoint — sama dengan `OrdersSpec.fromWidth` dan
@@ -137,14 +141,25 @@
 }
 
 html {
-  /* Skala teks pengguna tidak pernah dimatikan — sama dengan aturan
+  /* Ukuran judul mengikuti lebar layar, bukan melompat di breakpoint. Batas
+   bawah dan atasnya tetap dipatok supaya tidak pernah lebih kecil daripada
+   yang terbaca maupun selebar spanduk di desktop. */
+:root {
+  --fs-page-title: clamp(1.5rem, 1.25rem + 1.2vw, 2rem);
+  --fs-section-title: clamp(1rem, 0.94rem + 0.3vw, 1.125rem);
+  --fs-banner-title: clamp(1.0625rem, 0.95rem + 0.6vw, 1.375rem);
+}
+
+/* Skala teks pengguna tidak pernah dimatikan — sama dengan aturan
      aksesibilitas di aplikasi mobile. */
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  font-family:
-    'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto,
+  /* `--font-brand` dipasang `next/font` pada <html> bersama metrik font
+     cadangannya. Rantai sesudahnya hanya berlaku bila variabelnya tidak ada,
+     mis. pada landing yang belum memakai layout ini. */
+  font-family: var(--font-brand), system-ui, -apple-system, 'Segoe UI', Roboto,
     sans-serif;
   color: var(--body);
   background: var(--surface-soft);

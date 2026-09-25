@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BadgeCheck, MapPin, Navigation, Star, Store } from '@shared/design/icons';
+import { imageThumb } from '@shared/image';
 import type { Koperasi, RatingSummary } from '@shared/api';
 
 /**
@@ -93,7 +94,7 @@ export function KopdesCard({
       <Link href={detail} className="kc-kopdes__media" tabIndex={-1} aria-hidden="true">
         {koperasi.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={koperasi.imageUrl} alt="" loading="lazy" />
+          <img src={imageThumb(koperasi.imageUrl, 280)} alt="" loading="lazy" />
         ) : (
           <Store size={26} style={{ color: 'var(--muted-soft)' }} />
         )}

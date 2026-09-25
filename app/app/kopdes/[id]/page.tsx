@@ -15,6 +15,7 @@ import {
 } from '@shared/design/icons';
 import { MetaLine, directionsUrl } from '@/components/KopdesCard';
 import { MembershipCard } from '@/components/MembershipCard';
+import { imageThumb } from '@shared/image';
 import { ProductCard } from '@/components/ProductCard';
 import type { KoperasiDetail, MarketplaceProduct } from '@shared/api';
 
@@ -125,7 +126,7 @@ export default async function KopdesDetailPage({
       <div className="kc-kopdes__media kc-kopdes__media--hero">
         {kopdes.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={kopdes.imageUrl} alt="" />
+          <img src={imageThumb(kopdes.imageUrl, 900)} alt="" />
         ) : (
           <Store size={48} style={{ color: 'var(--muted-soft)' }} />
         )}

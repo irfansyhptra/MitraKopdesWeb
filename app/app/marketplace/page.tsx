@@ -81,6 +81,7 @@ function MarketplaceBrowser() {
   }));
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
@@ -136,7 +137,10 @@ function MarketplaceBrowser() {
       })
       // Kategori gagal dimuat bukan alasan mengosongkan seluruh halaman;
       // barisnya cukup tidak digambar.
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setCategoriesLoading(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -251,6 +255,7 @@ function MarketplaceBrowser() {
 
       <CategoryRow
         title="Filter Makanan"
+        loading={categoriesLoading}
         categories={categories.filter((c) => c.group === 'FOOD')}
         selectedId={filter.categoryId ?? null}
         onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id ?? undefined }))}
@@ -258,6 +263,7 @@ function MarketplaceBrowser() {
 
       <CategoryRow
         title="Filter Barang Ritel"
+        loading={categoriesLoading}
         categories={categories.filter((c) => c.group === 'RETAIL')}
         selectedId={filter.categoryId ?? null}
         onSelect={(id) => setFilter((f) => ({ ...f, categoryId: id ?? undefined }))}
@@ -520,14 +526,38 @@ function SourceSelector({
 function CategoryRow({
   title,
   categories,
+  loading,
   selectedId,
   onSelect,
 }: {
   title: string;
   categories: Category[];
+  loading: boolean;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 }) {
+  /**
+   * Selama kategori dimuat, tempatnya tetap dipesan.
+   *
+   * Sebelumnya section ini mengembalikan null lalu muncul begitu datanya tiba,
+   * mendorong seluruh halaman ~333px ke bawah — satu-satunya penyumbang CLS
+   * 0,197 di halaman ini, hampir dua kali anggaran 0,1.
+   */
+  if (loading) {
+    return (
+      <section>
+        <div className="kc-section-head">
+          <h2 className="kc-section-head__title">{title}</h2>
+        </div>
+        <div className="kc-rail" aria-hidden="true">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="kc-filtercard kc-filtercard--skeleton" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   if (categories.length === 0) return null;
 
   return (

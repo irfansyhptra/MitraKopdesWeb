@@ -11,6 +11,7 @@ import {
 import { Badge, SellerBadge } from '@shared/design/ui';
 import { Heart, Package, Plus, Star } from '@shared/design/icons';
 import { formatRupiah, toRupiah } from '@shared/format';
+import { imageThumb } from '@shared/image';
 import type { MarketplaceProduct } from '@shared/api';
 
 /**
@@ -59,7 +60,7 @@ export function ProductCard({ product }: { product: MarketplaceProduct }) {
       <Link href={href} className="kc-product__media" aria-label={product.name}>
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.imageUrl} alt="" loading="lazy" />
+          <img src={imageThumb(product.imageUrl, 220)} alt="" loading="lazy" />
         ) : (
           <Package size={30} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
         )}

@@ -214,20 +214,18 @@
 }
 
 .page-title {
-  font-size: 26px;
+  /* Cair: satu nilai untuk semua lebar, bukan lompatan di 600px. */
+  font-size: var(--fs-page-title);
+  /* Judul pendek dipecah merata, bukan menyisakan satu kata sendirian. */
+  text-wrap: balance;
   font-weight: 800;
   color: var(--ink);
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
 
-@media (min-width: 600px) {
-  .page-title {
-    font-size: 30px;
-  }
-}
-
 .page-sub {
+  text-wrap: pretty;
   margin-top: 2px;
   font-size: 13.5px;
   color: var(--muted);
