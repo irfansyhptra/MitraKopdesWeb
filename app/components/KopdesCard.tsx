@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { BadgeCheck, MapPin, Navigation, Star, Store } from '@shared/design/icons';
 import { imageThumb } from '@shared/image';
+import { ratingLabel } from '@shared/format';
 import type { Koperasi, RatingSummary } from '@shared/api';
 
 /**
@@ -14,12 +15,6 @@ import type { Koperasi, RatingSummary } from '@shared/api';
 /** Jarak dari titik ini ke koperasi, dibuka di aplikasi peta perangkat. */
 export function directionsUrl(koperasi: Pick<Koperasi, 'latitude' | 'longitude'>) {
   return `https://www.google.com/maps/dir/?api=1&destination=${koperasi.latitude},${koperasi.longitude}`;
-}
-
-/** Rating dalam format Indonesia: koma sebagai pemisah desimal. */
-export function ratingLabel(rating: RatingSummary): string | null {
-  if (rating?.average == null || rating.count < 1) return null;
-  return rating.average.toFixed(1).replace('.', ',');
 }
 
 /**

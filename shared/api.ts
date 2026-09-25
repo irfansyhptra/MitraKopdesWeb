@@ -10,6 +10,7 @@
 // Karena itu ada `pick()` untuk mengambil key yang tepat.
 
 import type {
+  Mitra,
   UpdateKopdesProfileInput,
   MembershipStatus,
   Membership,
@@ -509,6 +510,23 @@ export function createApiClient({
         page,
         limit,
       ),
+    /// Mitra UMKM di bawah satu koperasi. Tanpa `kopdesId`, seluruh mitra
+    /// aktif — penyaringannya di server, bukan di browser.
+    getMitraList: async (kopdesId?: string, page = 1, limit = 20) => {
+      const body = await rawRequest(
+        `/umkm${toQuery({ page, limit, ...(kopdesId ? { kopdesId } : {}) })}`,
+      );
+      const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
+      return {
+        items: asArray<Mitra>(data.umkm),
+        meta: {
+          total: Number(data.total ?? 0),
+          page: Number(data.page ?? page),
+          limit: Number(data.limit ?? limit),
+          totalPages: Number(data.totalPages ?? 1),
+        },
+      } satisfies Paginated<Mitra>;
+    },
     getKoperasi: (id: string) =>
       request<KoperasiDetail>(`/koperasi/${encodeURIComponent(id)}`),
 
@@ -833,6 +851,8 @@ export function createApiClient({
 export type ApiClient = ReturnType<typeof createApiClient>;
 
 export type {
+  MitraCategory,
+  Mitra,
   UpdateKopdesProfileInput,
   MembershipStatus,
   Membership,

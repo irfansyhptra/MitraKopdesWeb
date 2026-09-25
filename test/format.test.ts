@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatRupiah,
   orderTotal,
+  ratingLabel,
   shippingLabel,
   toRupiah,
 } from '@shared/format';
@@ -83,5 +84,18 @@ describe('shippingLabel', () => {
 
   it('menulis ongkir berbayar sebagai nominal', () => {
     expect(shippingLabel(10000)).toBe('Rp10.000');
+  });
+});
+
+describe('label rating', () => {
+  it('memakai koma sebagai pemisah desimal', () => {
+    expect(ratingLabel({ average: 4.75, count: 3 })).toBe('4,8');
+  });
+
+  it('belum ada ulasan menghasilkan null, bukan "0,0"', () => {
+    // Nol bintang dan belum dinilai adalah dua hal berbeda; pemanggilnya
+    // memilih tidak menggambar barisnya sama sekali.
+    expect(ratingLabel({ average: null, count: 0 })).toBeNull();
+    expect(ratingLabel({ average: 5, count: 0 })).toBeNull();
   });
 });

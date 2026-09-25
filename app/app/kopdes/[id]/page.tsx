@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   Building2,
   categoryIcon,
+  ChevronRight,
   Clock,
   MapPin,
   Navigation,
@@ -150,21 +151,26 @@ export default async function KopdesDetailPage({
 
       {kopdes.description && <p className="kc-prose">{kopdes.description}</p>}
 
-      <div className="kc-summary kc-summary--two">
-        <div className="kc-summary__item">
-          <p className="kc-summary__label">
-            <Package size={13} aria-hidden="true" />
-            Produk
-          </p>
-          <p className="kc-summary__value">{kopdes.productCount}</p>
-        </div>
-        <div className="kc-summary__item">
-          <p className="kc-summary__label">
-            <Building2 size={13} aria-hidden="true" />
-            Mitra UMKM
-          </p>
-          <p className="kc-summary__value">{kopdes.umkmCount}</p>
-        </div>
+      {/* Dua angka ini pintu masuk, bukan sekadar hiasan: masing-masing
+          membuka daftarnya sendiri. Bentuknya rail — pada ponsel keduanya
+          digulir, pada layar lebar berdampingan. */}
+      <div className="kc-rail kc-rail--stats">
+        <StatCard
+          icon={<Package size={18} />}
+          label="Produk yang dijual"
+          value={kopdes.productCount}
+          unit="barang"
+          href={`/marketplace?kopdesId=${kopdes.id}`}
+          tint={tintAt(0)}
+        />
+        <StatCard
+          icon={<Building2 size={18} />}
+          label="Mitra UMKM binaan"
+          value={kopdes.umkmCount}
+          unit="mitra"
+          href={`/kopdes/${kopdes.id}/mitra`}
+          tint={tintAt(3)}
+        />
       </div>
 
       <section>
@@ -288,6 +294,50 @@ export default async function KopdesDetailPage({
  * berarti pengurus belum mengisinya — dua hal yang berbeda, jadi yang kedua
  * tidak digambar sebagai "tutup setiap hari".
  */
+/**
+ * Kartu ringkasan yang bisa dibuka.
+ *
+ * Keterangannya di atas angkanya — yang dicari mata lebih dulu adalah "apa
+ * ini", bukan berapa banyak. Seluruh kartu adalah tautan, jadi tombol di
+ * dalamnya hanya penanda arah, bukan target kedua yang bisa terlewat.
+ */
+function StatCard({
+  icon,
+  label,
+  value,
+  unit,
+  href,
+  tint,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  unit: string;
+  href: string;
+  tint: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="kc-stat-card"
+      style={{ ['--tile-tint' as string]: tint }}
+    >
+      <span className="kc-stat-card__icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span className="kc-stat-card__label">{label}</span>
+      <span className="kc-stat-card__value">
+        {value}
+        <small>{unit}</small>
+      </span>
+      <span className="kc-stat-card__action">
+        Lihat selengkapnya
+        <ChevronRight size={15} aria-hidden="true" />
+      </span>
+    </Link>
+  );
+}
+
 function OpeningHours({
   hours,
   isOpen,

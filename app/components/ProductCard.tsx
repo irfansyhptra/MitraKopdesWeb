@@ -10,7 +10,7 @@ import {
 } from '@/lib/favorites';
 import { Badge, SellerBadge } from '@shared/design/ui';
 import { Heart, Package, Plus, Star } from '@shared/design/icons';
-import { formatRupiah, toRupiah } from '@shared/format';
+import { formatRupiah, ratingLabel, toRupiah } from '@shared/format';
 import { imageThumb } from '@shared/image';
 import type { MarketplaceProduct } from '@shared/api';
 
@@ -82,14 +82,14 @@ export function ProductCard({ product }: { product: MarketplaceProduct }) {
 
         {/* Rata-rata null berarti belum ada ulasan — bukan nol bintang,
             jadi barisnya tidak digambar sama sekali. */}
-        {product.rating.average != null && (
+        {ratingLabel(product.rating) && (
           <p className="kc-product__seller">
             <Star
               size={12}
               aria-hidden="true"
               style={{ color: 'var(--yellow-accent)', fill: 'currentColor' }}
             />{' '}
-            {product.rating.average.toFixed(1)}
+            {ratingLabel(product.rating)}
             {product.rating.count ? ` (${product.rating.count})` : ''}
           </p>
         )}

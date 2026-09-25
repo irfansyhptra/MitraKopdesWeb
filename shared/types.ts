@@ -231,6 +231,33 @@ export interface KoperasiDetail extends Koperasi {
   memberCount: number;
 }
 
+// ── Mitra UMKM ──
+
+/** Nilainya kembar dengan enum `UMKMCategory` di backend. */
+export type MitraCategory =
+  | 'KULINER'
+  | 'SWALAYAN'
+  | 'MINUMAN'
+  | 'KERAJINAN'
+  | 'JASA'
+  | 'LAINNYA';
+
+export interface Mitra {
+  id: string;
+  businessName: string;
+  description?: string | null;
+  address: string;
+  phone?: string | null;
+  photoUrl?: string | null;
+  category: MitraCategory;
+  kopdesId?: string | null;
+  /** `null` berarti jam operasional belum diisi — bukan "tutup". */
+  isOpen?: boolean | null;
+  productCount?: number;
+  rating: RatingSummary;
+  distanceLabel?: string | null;
+}
+
 // ── Keanggotaan Kopdes ──
 
 export type MembershipStatus = 'PENDING' | 'ACTIVE' | 'REJECTED';

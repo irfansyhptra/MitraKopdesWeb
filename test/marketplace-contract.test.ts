@@ -223,3 +223,28 @@ describe('etalase satu koperasi', () => {
     expect(paramsOf(fetchMock).has('kopdesId')).toBe(false);
   });
 });
+
+describe('daftar mitra kopdes', () => {
+  it('menyaring per koperasi di server', async () => {
+    const fetchMock = withFetch({
+      success: true,
+      data: { umkm: [{ id: 'm1', businessName: 'Kopi Lamteh' }], total: 1, page: 1, limit: 20, totalPages: 1 },
+    });
+    const page = await client().getMitraList('k1');
+    expect(paramsOf(fetchMock).get('kopdesId')).toBe('k1');
+    expect(page.items.map((m) => m.businessName)).toEqual(['Kopi Lamteh']);
+  });
+
+  it('membaca larik `umkm`, bukan `items`, dan tahan saat hilang', async () => {
+    withFetch({ success: true, data: {} });
+    const page = await client().getMitraList('k1');
+    expect(page.items).toEqual([]);
+    expect(page.meta.totalPages).toBe(1);
+  });
+
+  it('tanpa kopdesId tidak mengirim parameternya', async () => {
+    const fetchMock = withFetch({ success: true, data: { umkm: [] } });
+    await client().getMitraList();
+    expect(paramsOf(fetchMock).has('kopdesId')).toBe(false);
+  });
+});

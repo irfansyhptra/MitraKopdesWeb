@@ -193,3 +193,20 @@ export function orderNumber(order: {
   if (invoice) return invoice;
   return `#${order.id.slice(0, 8).toUpperCase()}`;
 }
+
+/**
+ * Rating dalam format Indonesia: koma sebagai pemisah desimal.
+ *
+ * `null` berarti belum ada ulasan — bukan nol bintang, jadi pemanggilnya bisa
+ * memilih tidak menggambar barisnya sama sekali.
+ *
+ * Tinggal di sini, bukan di salah satu kartu: sebelumnya kartu Kopdes memakai
+ * koma sementara kartu produk dan daftar mitra memakai titik.
+ */
+export function ratingLabel(rating: {
+  average: number | null;
+  count: number;
+}): string | null {
+  if (rating?.average == null || rating.count < 1) return null;
+  return rating.average.toFixed(1).replace('.', ',');
+}

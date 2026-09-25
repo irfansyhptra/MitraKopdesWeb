@@ -1,11 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { createApiClient } from '@shared/api';
-import {
-  MetaLine,
-  directionsUrl,
-  ratingLabel,
-} from '../app/components/KopdesCard';
+import { MetaLine, directionsUrl } from '../app/components/KopdesCard';
+// `ratingLabel` pindah ke formatter bersama supaya kartu produk, kartu
+// Kopdes, dan daftar mitra memakai format yang sama.
+import { ratingLabel } from '@shared/format';
 
 /**
  * Baris meta Kopdes dan pemetaan endpoint `/koperasi`.
