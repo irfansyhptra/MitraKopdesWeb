@@ -486,7 +486,7 @@
   border-radius: var(--r-pill);
   background: var(--primary);
   color: var(--on-primary);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 800;
 }
 
@@ -628,7 +628,7 @@
   border-radius: var(--r-pill);
   background: var(--bright-red);
   border: 1.5px solid #fff;
-  font-size: 8.5px;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1;
 }
@@ -713,7 +713,7 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
@@ -750,7 +750,7 @@
   border-radius: var(--r-button);
   background: var(--surface-soft);
   border: 1px solid var(--hairline-soft);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--body);
   transition: background var(--t-fast) var(--ease-out);
@@ -1628,7 +1628,7 @@
   border-radius: var(--r-pill);
   background: var(--primary);
   color: var(--on-primary);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 800;
 }
 
@@ -1938,7 +1938,7 @@
   border-radius: var(--r-xs);
   background: var(--primary);
   color: #fff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
 }
 
@@ -2047,7 +2047,7 @@
 }
 
 .kc-stat__label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted-soft);
 }
