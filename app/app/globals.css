@@ -153,6 +153,28 @@
   padding: var(--sp-lg) var(--page-padding) var(--sp-xl);
 }
 
+/*
+ * Komposisi desktop: sidebar kaca mengambang di kiri, isi bergeser
+ * sejauh lebarnya. Padding dipasang pada `.shell` supaya bilah atas dan isi
+ * bergeser bersama-sama — dua pergeseran terpisah selalu berakhir beda satu
+ * piksel. Merek dan navigasi atas disembunyikan karena keduanya sudah ada di
+ * sidebar; yang tersisa di bilah atas hanya keranjang dan akun.
+ */
+@media (min-width: 1024px) {
+  .shell {
+    padding-left: calc(var(--sidebar-w) + var(--sidebar-inset) * 2);
+  }
+
+  .topbar .brand,
+  .topbar .topnav {
+    display: none;
+  }
+
+  .topbar__inner {
+    justify-content: flex-end;
+  }
+}
+
 /* Ruang untuk bilah bawah supaya isi terakhir tidak tertutup. */
 @media (max-width: 719px) {
   .main {

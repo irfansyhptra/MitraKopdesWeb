@@ -66,6 +66,10 @@
   --glass-light: rgba(255, 255, 255, 0.48);
   --glass-border: rgba(255, 255, 255, 0.7);
 
+  /* ── Sidebar Apple Grid (desktop) ── */
+  --sidebar-w: 260px;
+  --sidebar-inset: 16px;
+
   --blur-light: 16px;
   --blur: 24px;
   --blur-strong: 32px;

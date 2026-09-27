@@ -68,23 +68,25 @@ export default async function HomePage() {
             actionLabel="Semua"
             href="/marketplace"
           />
-          <div className="kc-rail">
+          {/* Grid, bukan rail: di beranda kategori adalah peta isi toko —
+              yang tersembunyi di luar layar praktis tidak pernah dibuka. */}
+          <div className="catgrid">
             {categories.map((cat, i) => {
               const Icon = categoryIcon(cat.name);
               return (
                 <Link
                   key={cat.id}
                   href={`/marketplace?categoryId=${cat.id}`}
-                  className="kc-tile"
+                  className="catgrid__item"
                 >
                   <span
-                    className="kc-tile__icon"
+                    className="catgrid__icon"
                     style={{ ['--tile-tint' as string]: tintAt(i) }}
                     aria-hidden="true"
                   >
                     <Icon size={22} strokeWidth={2.1} />
                   </span>
-                  <span className="kc-tile__label">{cat.name}</span>
+                  <span className="catgrid__label">{cat.name}</span>
                 </Link>
               );
             })}

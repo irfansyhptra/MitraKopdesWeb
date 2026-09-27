@@ -1,25 +1,21 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
-import { getToken } from '@/lib/auth';
-import { Card } from '@shared/design/ui';
+import { useMe } from '@/lib/useMe';
 import {
   BadgeCheck,
   MapPin,
   Plus,
   ReceiptText,
   Search,
-  ShoppingCart,
   Sparkles,
   Star,
   UserIcon,
   Wallet,
   Award,
 } from '@shared/design/icons';
-import type { User } from '@shared/api';
 import type { LucideIcon } from '@shared/design/icons';
 
 /**
@@ -34,31 +30,10 @@ import type { LucideIcon } from '@shared/design/icons';
 
 export function HomeHero({ children }: { children?: ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [cartCount, setCartCount] = useState(0);
+  // Nama datang dari cache bersama: sidebar menampilkan nama yang sama, dan
+  // dua komponen tidak perlu dua permintaan `/me`.
+  const user = useMe();
   const [query, setQuery] = useState('');
-
-  useEffect(() => {
-    if (!getToken()) return;
-    // Dua permintaan tambahan yang boleh gagal diam-diam: tamu tetap melihat
-    // beranda yang sama, hanya tanpa nama dan tanpa jumlah keranjang.
-    let cancelled = false;
-    void api
-      .me()
-      .then((me) => !cancelled && setUser(me))
-      .catch(() => undefined);
-    void api
-      .getCart()
-      .then(
-        (cart) =>
-          !cancelled &&
-          setCartCount(cart.items.reduce((n, i) => n + i.quantity, 0)),
-      )
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   function search(e: React.FormEvent) {
     e.preventDefault();
@@ -67,73 +42,71 @@ export function HomeHero({ children }: { children?: ReactNode }) {
   }
 
   return (
-    <div className="stack-md">
-      <header className="kc-hero">
-        <div className="kc-hero__top">
-          <span className="kc-hero__mark" aria-hidden="true">
+    <div className="stack-lg">
+      <header className="hero-search">
+        {/* Gelombang dekoratif — tidak membawa informasi apa pun. */}
+        <svg
+          className="hero-search__wave"
+          viewBox="0 0 400 220"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M0 96C64 46 118 150 190 118s118-96 210-52v154H0z"
+            fill="rgba(227,27,35,0.10)"
+          />
+          <path
+            d="M20 140C90 104 132 186 214 156s126-58 186-24v88H20z"
+            fill="rgba(227,27,35,0.07)"
+          />
+        </svg>
+
+        <div className="hero-search__head">
+          <span className="hero-search__mark" aria-hidden="true">
             KMP
           </span>
 
-          <div className="kc-hero__who">
-            <p className="kc-hero__hello">Selamat Datang Kembali,</p>
-            <p className="kc-hero__name">
-              <span>{user?.name ?? 'Warga Desa'}</span>
+          <div className="hero-search__who">
+            <p className="hero-search__eyebrow">Selamat datang kembali,</p>
+            <p className="hero-search__title">
+              {user?.name ?? 'Warga Desa'}
               {/* Lencana ini menyampaikan status, bukan hiasan — jadi ia
                   punya teks untuk pembaca layar. */}
               {user && (
-                <span title="Akun terverifikasi" style={{ color: 'var(--yellow-accent)' }}>
+                <span
+                  title="Akun terverifikasi"
+                  style={{ color: 'var(--yellow-accent)', marginInlineStart: 6 }}
+                >
                   <span className="visually-hidden">Akun terverifikasi</span>
-                  <BadgeCheck size={15} aria-hidden="true" />
+                  <BadgeCheck size={16} aria-hidden="true" />
                 </span>
               )}
             </p>
             {/* Lokasi datang dari Kopdes tempat akun terdaftar. Tanpa itu
                 tidak ada desa yang bisa disebut — versi mobile menuliskan
                 "Desa Lamteh" tetap di dalam kode, dan itu tidak ditiru. */}
-            <p className="kc-hero__place">
-              <MapPin size={12} aria-hidden="true" />
+            <p className="hero-search__sub">
+              <MapPin size={12} aria-hidden="true" />{' '}
               {user?.kopdes?.name ?? 'Pilih koperasi desamu'}
             </p>
           </div>
 
-          <div className="kc-hero__acts">
-            <Link
-              href="/orders"
-              className="kc-iconbtn"
-              aria-label={
-                cartCount > 0 ? `Keranjang, ${cartCount} produk` : 'Keranjang'
-              }
-            >
-              <ShoppingCart size={19} aria-hidden="true" />
-              {cartCount > 0 && (
-                <span className="kc-iconbtn__badge">
-                  {cartCount > 99 ? '99+' : cartCount}
-                </span>
-              )}
-            </Link>
-            <Link
-              href="/ai-assistant"
-              className="kc-iconbtn"
-              aria-label="Asisten AI"
-            >
-              <Sparkles size={19} aria-hidden="true" />
-            </Link>
-          </div>
         </div>
 
-        <form className="kc-hero__search" onSubmit={search} role="search">
-          <label className="kc-hero__field">
-            <Search size={19} aria-hidden="true" />
-            <span className="visually-hidden">Cari produk</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari produk kebutuhanmu…"
-            />
-          </label>
-          <button type="submit" className="kc-hero__filter">
-            <Search size={17} aria-hidden="true" style={{ color: 'var(--primary)' }} />
+        <form className="hero-search__form" onSubmit={search} role="search">
+          <Search size={19} aria-hidden="true" />
+          <span className="visually-hidden" id="home-search-label">
+            Cari produk
+          </span>
+          <input
+            type="search"
+            aria-labelledby="home-search-label"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari produk kebutuhanmu…"
+          />
+          <button type="submit" className="kc-btn kc-btn--primary">
             Cari
           </button>
         </form>
@@ -141,44 +114,40 @@ export function HomeHero({ children }: { children?: ReactNode }) {
 
       {children}
 
-      <Card className="stack-md">
-        <div className="kc-summary">
-          <SummaryItem icon={Wallet} tint="var(--primary)" label="Saldo Anggota" />
-          <SummaryItem icon={Star} tint="var(--warning)" label="Poin Belanja" />
-          <div className="kc-summary__item">
-            <p className="kc-summary__label">
-              <Award
-                size={13}
-                aria-hidden="true"
-                style={{ color: 'var(--yellow-accent)' }}
-              />
-              Status
-            </p>
-            <p className="kc-summary__value">
+      <div className="quickrow">
+        <QuickItem icon={Wallet} tint="var(--primary)" label="Saldo Anggota" />
+        <QuickItem icon={Star} tint="var(--warning)" label="Poin Belanja" />
+        <div className="quickrow__item">
+          <span className="quickrow__icon" aria-hidden="true">
+            <Award size={17} style={{ color: 'var(--yellow-accent)' }} />
+          </span>
+          <span>
+            <span className="quickrow__label">Status</span>
+            <span className="quickrow__value">
               {user ? 'Anggota' : 'Belum masuk'}
-            </p>
-          </div>
+            </span>
+          </span>
         </div>
+      </div>
 
-        <nav className="kc-quick" aria-label="Aksi cepat">
-          <Link href="/marketplace">
-            <Plus size={15} aria-hidden="true" />
-            Belanja
-          </Link>
-          <Link href="/orders">
-            <ReceiptText size={15} aria-hidden="true" />
-            Riwayat
-          </Link>
-          <Link href="/ai-assistant">
-            <Sparkles size={15} aria-hidden="true" />
-            Asisten
-          </Link>
-          <Link href="/profile">
-            <UserIcon size={15} aria-hidden="true" />
-            Detail
-          </Link>
-        </nav>
-      </Card>
+      <nav className="kc-quick" aria-label="Aksi cepat">
+        <Link href="/marketplace">
+          <Plus size={15} aria-hidden="true" />
+          Belanja
+        </Link>
+        <Link href="/orders">
+          <ReceiptText size={15} aria-hidden="true" />
+          Riwayat
+        </Link>
+        <Link href="/ai-assistant">
+          <Sparkles size={15} aria-hidden="true" />
+          Asisten
+        </Link>
+        <Link href="/profile">
+          <UserIcon size={15} aria-hidden="true" />
+          Detail
+        </Link>
+      </nav>
     </div>
   );
 }
@@ -192,7 +161,7 @@ export function HomeHero({ children }: { children?: ReactNode }) {
  * pernah ada. Slotnya tetap disediakan supaya tinggal diisi begitu
  * endpoint-nya dibuat.
  */
-function SummaryItem({
+function QuickItem({
   icon: Icon,
   tint,
   label,
@@ -202,14 +171,16 @@ function SummaryItem({
   label: string;
 }) {
   return (
-    <div className="kc-summary__item">
-      <p className="kc-summary__label">
-        <Icon size={13} aria-hidden="true" style={{ color: tint }} />
-        {label}
-      </p>
-      <p className="kc-summary__value" style={{ color: 'var(--muted-soft)' }}>
-        —
-      </p>
+    <div className="quickrow__item">
+      <span className="quickrow__icon" aria-hidden="true">
+        <Icon size={17} style={{ color: tint }} />
+      </span>
+      <span>
+        <span className="quickrow__label">{label}</span>
+        <span className="quickrow__value" style={{ color: 'var(--muted-soft)' }}>
+          —
+        </span>
+      </span>
     </div>
   );
 }

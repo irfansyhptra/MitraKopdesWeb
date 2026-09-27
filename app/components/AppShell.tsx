@@ -4,15 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useSession } from '@/lib/useSession';
-import {
-  ClipboardList,
-  House,
-  ShoppingCart,
-  Sparkles,
-  Store,
-  UserIcon,
-  type LucideIcon,
-} from '@shared/design/icons';
+import { useCartCount, useMe } from '@/lib/useMe';
+import { Sidebar } from './Sidebar';
+import { ShoppingCart } from '@shared/design/icons';
+import { isActive, NAV } from './nav';
 
 /**
  * Kerangka navigasi pelanggan — padanan `AppShell` + `CustomBottomNavBar`
@@ -23,39 +18,10 @@ import {
  * dengan yang ada di web.
  */
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  accent?: boolean;
-}
-
-/**
- * Tujuan navigasi — sama persis dengan `CustomBottomNavBar` di mobile:
- * Beranda, Marketplace, Asisten, Pesanan, Profil. Asisten diberi aksen,
- * seperti `isAccent` pada item yang sama di Dart.
- */
-const NAV: NavItem[] = [
-  { href: '/', label: 'Beranda', icon: House },
-  { href: '/marketplace', label: 'Marketplace', icon: Store },
-  { href: '/ai-assistant', label: 'Asisten', icon: Sparkles, accent: true },
-  { href: '/orders', label: 'Pesanan', icon: ClipboardList },
-  { href: '/profile', label: 'Profil', icon: UserIcon },
-];
-
-function isActive(pathname: string, href: string): boolean {
-  if (href === '/') return pathname === '/';
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-export function AppShell({
-  children,
-  cartCount = 0,
-}: {
-  children: ReactNode;
-  cartCount?: number;
-}) {
+export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? '/';
+  const me = useMe();
+  const cartCount = useCartCount();
 
   // Portal pegawai punya kerangkanya sendiri. Pegawai yang sedang memproses
   // pesanan tidak sedang berbelanja, jadi navigasi pelanggan tidak ikut
@@ -65,6 +31,8 @@ export function AppShell({
 
   return (
     <div className="shell">
+      <Sidebar user={me} />
+
       <header className="topbar">
         <div className="topbar__inner">
           <Link href="/" className="brand" aria-label="Beranda KMP Mitra">
