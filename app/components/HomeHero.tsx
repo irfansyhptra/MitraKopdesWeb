@@ -88,7 +88,7 @@ export function HomeHero({ children }: { children?: ReactNode }) {
                 "Desa Lamteh" tetap di dalam kode, dan itu tidak ditiru. */}
             <p className="hero-search__sub">
               <MapPin size={12} aria-hidden="true" />{' '}
-              {user?.kopdes?.name ?? 'Pilih koperasi desamu'}
+              {user?.kopdes?.name ?? 'Pusat Koperasi Desa Merah Putih'}
             </p>
           </div>
 

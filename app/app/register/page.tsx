@@ -4,27 +4,19 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { setTokens } from '@/lib/auth';
-import { Button, Card, Chip } from '@shared/design/ui';
+import { Button, Card } from '@shared/design/ui';
 
 /**
  * Daftar — padanan `RegisterScreen`.
  *
- * Hanya tiga peran yang boleh mendaftar sendiri; akun staf Kopdes dibuat
- * Super Admin. Pembatasan sesungguhnya ada di backend (`SELF_REGISTER_ROLES`),
- * pilihan di sini cuma mencerminkannya.
+ * Hanya akun pembeli yang boleh mendaftar sendiri; pembatasan sesungguhnya ada
+ * di backend (`SELF_REGISTER_ROLES`). Pilihan peran sempat ada di sini, dan
+ * keduanya menghasilkan akun buntu: UMKM tanpa profil usaha dan tanpa
+ * verifikasi Kopdes, kurir tanpa desa yang bisa menugaskannya.
  */
-type SelfRole = 'CUSTOMER' | 'UMKM' | 'COURIER';
-
-const ROLES: { id: SelfRole; label: string; desc: string }[] = [
-  { id: 'CUSTOMER', label: 'Pembeli', desc: 'Belanja di marketplace desa' },
-  { id: 'UMKM', label: 'Mitra UMKM', desc: 'Jualan di bawah Kopdes desamu' },
-  { id: 'COURIER', label: 'Kurir', desc: 'Mengantar pesanan warga' },
-];
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [role, setRole] = useState<SelfRole>('CUSTOMER');
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -39,15 +31,18 @@ export default function RegisterPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await api.register({
+      const challenge = await api.register({
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || undefined,
         password: form.password,
-        role,
       });
-      setTokens(result.accessToken, result.refreshToken);
-      router.replace('/');
+      window.sessionStorage.setItem('kopdes_pending_email', challenge.email);
+      window.sessionStorage.setItem(
+        'kopdes_otp_resend_at',
+        String(Date.now() + challenge.resendAfter * 1000),
+      );
+      router.push('/verify-email');
     } catch (err) {
       setError((err as Error).message);
       setSubmitting(false);
@@ -60,26 +55,6 @@ export default function RegisterPage() {
         <div>
           <h1 className="page-title">Daftar</h1>
           <p className="page-sub">Satu akun untuk seluruh layanan koperasi desa.</p>
-        </div>
-
-        <div>
-          <p className="t-caption-sm" style={{ marginBottom: 'var(--sp-xs)' }}>
-            Daftar sebagai
-          </p>
-          <div style={{ display: 'flex', gap: 'var(--sp-sm)', flexWrap: 'wrap' }}>
-            {ROLES.map((option) => (
-              <Chip
-                key={option.id}
-                selected={role === option.id}
-                onClick={() => setRole(option.id)}
-              >
-                {option.label}
-              </Chip>
-            ))}
-          </div>
-          <p className="t-caption-sm" style={{ marginTop: 'var(--sp-xs)' }}>
-            {ROLES.find((r) => r.id === role)?.desc}
-          </p>
         </div>
 
         <form onSubmit={submit} className="stack-md">
@@ -135,7 +110,7 @@ export default function RegisterPage() {
           {error && <p className="form-error">{error}</p>}
 
           <Button type="submit" block disabled={submitting}>
-            {submitting ? 'Mendaftarkan…' : 'Daftar'}
+            {submitting ? 'Mengirim kode…' : 'Daftar & Verifikasi Email'}
           </Button>
         </form>
 

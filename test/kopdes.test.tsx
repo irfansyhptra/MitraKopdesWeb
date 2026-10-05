@@ -118,3 +118,55 @@ describe('daftar Kopdes', () => {
     expect(url).toContain('openNow=true');
   });
 });
+
+describe('discovery beranda', () => {
+  it('membaca produk pilihan dari envelope products', async () => {
+    withFetch({
+      success: true,
+      data: {
+        products: [
+          {
+            id: 'u1',
+            name: 'Kopi Gayo',
+            price: 45000,
+            stock: 8,
+            sellerName: 'UMKM Lamteh',
+            source: 'UMKM',
+          },
+        ],
+        total: 1,
+      },
+    });
+
+    const products = await client().getFeaturedUmkmProducts(4);
+    expect(products.map((product) => product.name)).toEqual(['Kopi Gayo']);
+  });
+
+  it('membaca banner dari data.banners, bukan menganggap data sebagai larik', async () => {
+    withFetch({
+      success: true,
+      data: {
+        banners: [{ id: 'b1', title: 'Gratis Ongkir' }],
+        total: 1,
+      },
+    });
+
+    const banners = await client().getBanners();
+    expect(banners.map((banner) => banner.title)).toEqual(['Gratis Ongkir']);
+  });
+
+  it('mengirim satu koordinat yang sama ke pencarian UMKM terdekat', async () => {
+    withFetch({ success: true, data: { umkm: [] } });
+    await client().getNearbyMitra(
+      { latitude: 5.55, longitude: 95.32, radiusKm: 15 },
+      1,
+      4,
+    );
+    const url = (globalThis.fetch as unknown as { mock: { calls: string[][] } })
+      .mock.calls[0][0];
+    expect(url).toContain('/umkm/nearby?');
+    expect(url).toContain('latitude=5.55');
+    expect(url).toContain('longitude=95.32');
+    expect(url).toContain('radius=15');
+  });
+});

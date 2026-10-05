@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -15,6 +15,8 @@ import {
   Skeleton,
 } from '@shared/design/ui';
 import type { User } from '@shared/api';
+import { ImagePickerField } from '@/components/profile/ImagePickerField';
+import { refreshMeCache } from '@/lib/useMe';
 import {
   Building2,
   ChevronRight,
@@ -58,7 +60,7 @@ const SECTIONS: { title: string; items: MenuItem[] }[] = [
       {
         label: 'Detail Profil',
         desc: 'Lihat dan edit informasi profil Anda',
-        pending: true,
+        href: '#profile-settings',
       },
       {
         label: 'Alamat Pengiriman',
@@ -127,6 +129,9 @@ export default function ProfilePage() {
   const [cartCount, setCartCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -163,6 +168,27 @@ export default function ProfilePage() {
   function logout() {
     clearTokens();
     router.replace('/login');
+  }
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setSaving(true);
+    setNotice(null);
+    try {
+      await api.updateMyProfile({
+        name: String(form.get('name') ?? '').trim(),
+        phone: String(form.get('phone') ?? '').trim() || undefined,
+      });
+      if (avatar) await api.updateAvatar(avatar);
+      setNotice('Profil berhasil diperbarui.');
+      refreshMeCache();
+      await load();
+    } catch (reason) {
+      setNotice((reason as Error).message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
@@ -240,7 +266,9 @@ export default function ProfilePage() {
                 color: 'var(--primary-active)',
               }}
             >
-              {initial}
+              {user.avatarUrl
+                ? <img src={user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                : initial}
             </span>
             <div style={{ minWidth: 0, flex: 1 }}>
               <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink)' }}>
@@ -335,6 +363,30 @@ export default function ProfilePage() {
             Asisten
           </Link>
         </nav>
+      </Card>
+
+      <Card className="stack-md">
+        <form id="profile-settings" className="stack-md" onSubmit={(event) => void saveProfile(event)}>
+          <SectionHeader title="Pengaturan Profil" />
+          <ImagePickerField
+            label="Foto profil"
+            hint="JPG, PNG, atau WebP · maksimal 4 MB"
+            currentUrl={user.avatarUrl}
+            shape="avatar"
+            disabled={saving}
+            onChange={setAvatar}
+          />
+          <div className="field">
+            <label htmlFor="profile-name">Nama lengkap</label>
+            <input id="profile-name" name="name" required defaultValue={user.name} />
+          </div>
+          <div className="field">
+            <label htmlFor="profile-phone">Nomor telepon</label>
+            <input id="profile-phone" name="phone" type="tel" defaultValue={user.phone ?? ''} />
+          </div>
+          {notice && <p className="t-caption-sm" role="status">{notice}</p>}
+          <Button type="submit" disabled={saving}>{saving ? 'Menyimpan…' : 'Simpan Profil'}</Button>
+        </form>
       </Card>
 
       <div className="kc-split">

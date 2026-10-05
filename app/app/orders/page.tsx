@@ -256,7 +256,7 @@ export default function OrdersPage() {
   }
 
   const content = (
-    <>
+    <div className="orders-page">
       <div className="page-head">
         <div className="page-head__text">
           <h1 className="page-title">Pesanan</h1>
@@ -264,16 +264,14 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 'var(--sp-base)' }}>
-        <SegmentedTabs
-          items={tabs}
-          active={tab}
-          onSelect={setTab}
-          label="Bagian pesanan"
-        />
-      </div>
+      <SegmentedTabs
+        items={tabs}
+        active={tab}
+        onSelect={setTab}
+        label="Bagian pesanan"
+      />
 
-      <button type="button" className="kc-trust" style={{ marginBottom: 'var(--sp-base)' }}>
+      <button type="button" className="kc-trust">
         <ShieldCheck
           size={18}
           aria-hidden="true"
@@ -331,7 +329,7 @@ export default function OrdersPage() {
           onRetry={() => void loadHistory()}
         />
       )}
-    </>
+    </div>
   );
 
   return (

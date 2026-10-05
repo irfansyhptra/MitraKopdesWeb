@@ -17,9 +17,8 @@ import {
 import { formatRupiah, shippingLabel, toRupiah } from '@shared/format';
 import { MapPin, Package } from '@shared/design/icons';
 import { groupBySeller } from '@/components/CartTab';
-import { MethodPicker } from '@/components/payment/MethodPicker';
-import { rememberMethod } from '@/components/payment/methods';
-import type { Address, Cart, PaymentMethodCode } from '@shared/api';
+import { openSnapPayment } from '@/components/payment/snap';
+import type { Address, Cart } from '@shared/api';
 
 /**
  * Checkout.
@@ -51,7 +50,6 @@ function CheckoutForm() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addressId, setAddressId] = useState<string>('');
-  const [method, setMethod] = useState<PaymentMethodCode | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [stage, setStage] = useState<'idle' | 'order' | 'payment'>('idle');
@@ -124,23 +122,26 @@ function CheckoutForm() {
    * Satu label diam membuat pemesan menekan tombolnya lagi.
    */
   async function submit() {
-    if (lines.length === 0 || !method || submitting) return;
+    if (lines.length === 0 || submitting) return;
     setSubmitting(true);
     setError(null);
 
     try {
       setStage('order');
       const order = await api.checkout({
-        paymentMethod: 'QRIS',
+        paymentMethod: 'MIDTRANS',
         ...(addressId ? { deliveryAddressId: addressId } : {}),
         ...(selectedIds.length > 0 ? { cartItemIds: selectedIds } : {}),
       });
 
       setStage('payment');
-      await api.createPayment(order.id, method);
-      rememberMethod(method);
-
-      router.replace(`/payment/${order.id}`);
+      const payment = await api.createPayment(order.id);
+      await openSnapPayment(payment, {
+        onSuccess: () => router.replace(`/payment/${order.id}`),
+        onPending: () => router.replace(`/payment/${order.id}`),
+        onError: () => router.replace(`/payment/${order.id}`),
+        onClose: () => router.replace(`/payment/${order.id}`),
+      });
     } catch (e) {
       setError((e as Error).message);
       setSubmitting(false);
@@ -277,7 +278,17 @@ function CheckoutForm() {
 
           <Card className="stack-md">
             <SectionHeader title="Metode Pembayaran" />
-            <MethodPicker value={method} onChange={setMethod} amount={total} />
+            <div className="kc-snap-method">
+              <span className="kc-snap-method__mark" aria-hidden="true">S</span>
+              <span>
+                <strong>Midtrans Snap</strong>
+                <small>
+                  Pilih QRIS, transfer bank, dompet digital, kartu, atau gerai
+                  pembayaran di popup aman Midtrans Sandbox.
+                </small>
+              </span>
+              <span className="kc-badge kc-badge--primary">SANDBOX</span>
+            </div>
           </Card>
         </div>
 
@@ -319,16 +330,14 @@ function CheckoutForm() {
 
             <Button
               block
-              disabled={submitting || !method}
+              disabled={submitting}
               onClick={() => void submit()}
             >
               {stage === 'order'
                 ? 'Membuat pesanan…'
                 : stage === 'payment'
                   ? 'Menyiapkan pembayaran…'
-                  : method
-                    ? 'Bayar Sekarang'
-                    : 'Pilih metode pembayaran'}
+                  : 'Bayar dengan Midtrans'}
             </Button>
 
             <p className="t-caption-sm">

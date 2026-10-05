@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   ListGroup,
+  SectionHeader,
   Message,
   QuantityStepper,
   SellerBadge,
@@ -145,83 +146,97 @@ export function CartTab({
 
   if (loading) {
     return (
-      <div className="stack-md">
-        {[0, 1].map((i) => (
-          <div className="kc-card kc-card--pad stack-sm" key={i}>
-            <Skeleton height={16} width="45%" />
-            <Skeleton height={72} />
-            <Skeleton height={72} />
-          </div>
-        ))}
-      </div>
+      <section className="orders-section">
+        <SectionHeader title="Produk di Keranjang" />
+        <div className="ordercard-list">
+          {[0, 1].map((i) => (
+            <div className="kc-card kc-card--pad stack-sm" key={i}>
+              <Skeleton height={16} width="45%" />
+              <Skeleton height={72} />
+              <Skeleton height={72} />
+            </div>
+          ))}
+        </div>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <Message
-        title="Pesanan belum berhasil dimuat"
-        body={error}
-        actionLabel="Coba Lagi"
-        onAction={onRetry}
-      />
+      <section className="orders-section">
+        <SectionHeader title="Produk di Keranjang" />
+        <Message
+          title="Pesanan belum berhasil dimuat"
+          body={error}
+          actionLabel="Coba Lagi"
+          onAction={onRetry}
+        />
+      </section>
     );
   }
 
   if (groups.length === 0) {
     return (
-      <Message
-        title="Keranjangmu masih kosong"
-        body="Temukan produk Kopdes dan UMKM pilihan untuk kebutuhanmu."
-        actionLabel="Mulai Belanja"
-        href="/marketplace"
-      />
+      <section className="orders-section">
+        <SectionHeader title="Produk di Keranjang" />
+        <Message
+          title="Keranjangmu masih kosong"
+          body="Temukan produk Kopdes dan UMKM pilihan untuk kebutuhanmu."
+          actionLabel="Mulai Belanja"
+          href="/marketplace"
+        />
+      </section>
     );
   }
 
   return (
-    <div className="stack-md">
-      {groups.map((group) => {
-        const ids = group.items.map((i) => i.id);
-        const state = checkStateOf(ids, selected);
+    <section className="orders-section">
+      {/* Satu judul untuk seluruh keranjang; tiap penjual jadi kartunya
+          sendiri di bawahnya. */}
+      <SectionHeader title="Produk di Keranjang" />
+      <div className="ordercard-list">
+        {groups.map((group) => {
+          const ids = group.items.map((i) => i.id);
+          const state = checkStateOf(ids, selected);
 
-        return (
-          <ListGroup key={group.key}>
-            <div className="sellergroup__head">
-              <TriCheckbox
-                state={state}
-                onChange={(next) => onToggleGroup(ids, next)}
-                label={`Pilih semua produk dari ${group.name}`}
-              />
-              <SellerBadge kind={group.kind} />
-              <Badge variant="success">
-                <BadgeCheck size={11} aria-hidden="true" /> Terverifikasi
-              </Badge>
-              <span className="sellergroup__name">{group.name}</span>
-              <button
-                type="button"
-                className="kc-btn kc-btn--ghost"
-                onClick={() => onToggleGroup(ids, state !== 'all')}
-              >
-                {state === 'all' ? 'Batal Pilih' : 'Pilih Semua'}
-              </button>
-            </div>
+          return (
+            <ListGroup key={group.key}>
+              <div className="sellergroup__head">
+                <TriCheckbox
+                  state={state}
+                  onChange={(next) => onToggleGroup(ids, next)}
+                  label={`Pilih semua produk dari ${group.name}`}
+                />
+                <SellerBadge kind={group.kind} />
+                <Badge variant="success">
+                  <BadgeCheck size={11} aria-hidden="true" /> Terverifikasi
+                </Badge>
+                <span className="sellergroup__name">{group.name}</span>
+                <button
+                  type="button"
+                  className="kc-btn kc-btn--ghost"
+                  onClick={() => onToggleGroup(ids, state !== 'all')}
+                >
+                  {state === 'all' ? 'Batal Pilih' : 'Pilih Semua'}
+                </button>
+              </div>
 
-            {group.items.map((item) => (
-              <CartRow
-                key={item.id}
-                item={item}
-                selected={selected.has(item.id)}
-                busy={busyItems.has(item.id)}
-                onToggle={(next) => onToggleItem(item.id, next)}
-                onQuantity={(next) => onQuantity(item, next)}
-                onRemove={() => onRemove(item)}
-              />
-            ))}
-          </ListGroup>
-        );
-      })}
-    </div>
+              {group.items.map((item) => (
+                <CartRow
+                  key={item.id}
+                  item={item}
+                  selected={selected.has(item.id)}
+                  busy={busyItems.has(item.id)}
+                  onToggle={(next) => onToggleItem(item.id, next)}
+                  onQuantity={(next) => onQuantity(item, next)}
+                  onRemove={() => onRemove(item)}
+                />
+              ))}
+            </ListGroup>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

@@ -54,6 +54,7 @@ export function ProductDetail({
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [chatting, setChatting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
 
@@ -97,6 +98,25 @@ export function ProductDetail({
       setNotice((e as Error).message);
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function openSellerChat() {
+    if (!getToken()) {
+      router.push(`/login?next=${encodeURIComponent(detailPath)}`);
+      return;
+    }
+    setChatting(true);
+    setNotice(null);
+    try {
+      const conversation = await api.startProductConversation(
+        product.id,
+        isUmkm ? 'UMKM' : 'KOPDES',
+      );
+      router.push(`/chat/${conversation.id}`);
+    } catch (e) {
+      setNotice((e as Error).message);
+      setChatting(false);
     }
   }
 
@@ -274,6 +294,9 @@ export function ProductDetail({
               : canOrder
                 ? 'Tambah ke Keranjang'
                 : 'Stok Habis'}
+          </Button>
+          <Button variant="secondary" block disabled={chatting} onClick={openSellerChat}>
+            {chatting ? 'Membuka chat…' : 'Chat Penjual'}
           </Button>
 
           {notice && <p className="t-caption">{notice}</p>}

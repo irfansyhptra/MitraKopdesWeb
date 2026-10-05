@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Card, Message } from '@shared/design/ui';
@@ -12,10 +12,7 @@ import {
   PaymentStatusBadge,
   STATUS_VIEW,
 } from '@/components/payment/PaymentBits';
-import { QrisView } from '@/components/payment/QrisView';
-import { VirtualAccountView } from '@/components/payment/VirtualAccountView';
-import { EwalletView } from '@/components/payment/EwalletView';
-import { methodInfo } from '@/components/payment/methods';
+import { openSnapPayment } from '@/components/payment/snap';
 import {
   isFinalStatus,
   usePaymentStatus,
@@ -35,6 +32,8 @@ import {
 export default function PaymentPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const { data, loading, checking, error, refresh } = usePaymentStatus(orderId);
+  const [opening, setOpening] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const onExpire = useCallback(() => void refresh(), [refresh]);
 
@@ -64,7 +63,39 @@ export default function PaymentPage() {
 
   const view = STATUS_VIEW[data.status];
   const final = isFinalStatus(data.status);
-  const info = methodInfo(data.method);
+  const payment = data;
+
+  async function openPayment() {
+    if (opening) return;
+    setOpening(true);
+    setNotice(null);
+    try {
+      await openSnapPayment(payment, {
+        onSuccess: () => {
+          setOpening(false);
+          setNotice('Pembayaran selesai. Menunggu konfirmasi webhook Midtrans…');
+          void refresh();
+        },
+        onPending: () => {
+          setOpening(false);
+          setNotice('Pembayaran dibuat dan masih menunggu penyelesaian.');
+          void refresh();
+        },
+        onError: () => {
+          setOpening(false);
+          setNotice('Pembayaran belum berhasil. Anda dapat mencoba kembali.');
+          void refresh();
+        },
+        onClose: () => {
+          setOpening(false);
+          setNotice('Popup ditutup. Tagihan tetap dapat dilanjutkan sebelum kedaluwarsa.');
+        },
+      });
+    } catch (reason) {
+      setOpening(false);
+      setNotice((reason as Error).message);
+    }
+  }
 
   return (
     <div className="kc-pay stack-md">
@@ -101,13 +132,31 @@ export default function PaymentPage() {
         )}
       </Card>
 
-      {/* Instruksi hanya berguna selama pembayaran masih bisa diselesaikan. */}
-      {!final && info?.instruction === 'qris' && <QrisView payment={data} />}
-      {!final && (info?.instruction === 'va' || info?.instruction === 'bill') && (
-        <VirtualAccountView payment={data} />
+      {!final && (
+        <Card className="stack-sm">
+          <div className="kc-snap-method">
+            <span className="kc-snap-method__mark" aria-hidden="true">S</span>
+            <span>
+              <strong>Midtrans Snap</strong>
+              <small>
+                Pilih metode dan selesaikan pembayaran melalui popup Sandbox
+                Midtrans tanpa meninggalkan halaman KOMIT.
+              </small>
+            </span>
+            <span className="kc-badge kc-badge--primary">SANDBOX</span>
+          </div>
+          <button
+            type="button"
+            className="kc-btn kc-btn--primary kc-btn--block"
+            disabled={opening || !data.snapToken}
+            onClick={() => void openPayment()}
+          >
+            {opening ? 'Membuka Midtrans…' : 'Lanjutkan Pembayaran'}
+          </button>
+        </Card>
       )}
-      {!final && info?.instruction === 'ewallet' && <EwalletView payment={data} />}
 
+      {notice && <p className="form-success" role="status">{notice}</p>}
       {error && <p className="form-error">{error}</p>}
 
       <div className="stack-sm">

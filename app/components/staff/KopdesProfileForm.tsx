@@ -7,6 +7,7 @@ import { useAsync } from './useAsync';
 import { Permissions } from '@shared/api';
 import type { Koperasi } from '@shared/api';
 import { Clock, Store } from '@shared/design/icons';
+import { ImagePickerField } from '../profile/ImagePickerField';
 
 /**
  * Profil koperasi yang diurus pemiliknya: deskripsi, kontak, daftar layanan,
@@ -43,6 +44,8 @@ export function KopdesProfileForm() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [logo, setLogo] = useState<File | null>(null);
+  const [banner, setBanner] = useState<File | null>(null);
 
   if (!allowed || profile.loading || !profile.data) return null;
   const kopdes = profile.data;
@@ -74,6 +77,12 @@ export function KopdesProfileForm() {
           .filter(Boolean),
         operatingHours: hours,
       });
+      if (logo || banner) {
+        await api.updateKopdesMedia({
+          logo: logo ?? undefined,
+          banner: banner ?? undefined,
+        });
+      }
       setNotice('Profil koperasi tersimpan.');
       profile.reload();
     } catch (err) {
@@ -93,6 +102,22 @@ export function KopdesProfileForm() {
       </p>
 
       <form className="staff-stack" onSubmit={save}>
+        <ImagePickerField
+          label="Logo Kopdes"
+          hint="Digunakan pada kartu dan identitas toko"
+          currentUrl={kopdes.logoUrl}
+          shape="avatar"
+          disabled={saving}
+          onChange={setLogo}
+        />
+        <ImagePickerField
+          label="Banner Kopdes"
+          hint="Foto lanskap untuk bagian atas halaman toko"
+          currentUrl={kopdes.imageUrl}
+          shape="banner"
+          disabled={saving}
+          onChange={setBanner}
+        />
         <div className="field">
           <label htmlFor="kopdes-description">Deskripsi</label>
           <textarea

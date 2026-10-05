@@ -16,8 +16,10 @@ import type {
   Membership,
   ApplyMembershipInput,
   Banner,
+  DiscoveryProduct,
   Address,
   AuthResult,
+  EmailVerificationChallenge,
   Cart,
   CreateAddressInput,
   Category,
@@ -46,7 +48,6 @@ import type {
   Courier,
   DeliveryStatusWire,
   InventoryTransaction,
-  PaymentMethodCode,
   PaymentSnapshot,
   ApprovalResult,
   CreateKopdesDirectInput,
@@ -55,11 +56,27 @@ import type {
   KopdesStats,
   SubmitApplicationInput,
   SuperAdminOverview,
+  SuperAdminUser,
+  CreateSuperStaffInput,
+  UpdateSuperStaffInput,
   CreatePegawaiInput,
   PermissionCatalog,
   StaffAccount,
   UpdatePegawaiInput,
   StaffProductInput,
+  SellerDashboard,
+  SellerProduct,
+  SellerProductInput,
+  SellerProductPage,
+  SellerOrder,
+  SellerStore,
+  CourierDelivery,
+  AdminMitra,
+  AdminUmkmProduct,
+  ChatChannel,
+  ChatConversation,
+  ChatMessage,
+  ContentPage,
 } from './types';
 
 export interface ApiClientOptions {
@@ -394,18 +411,45 @@ export function createApiClient({
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
+    /**
+     * Pendaftaran mandiri hanya membuat akun pembeli — tidak ada `role` di
+     * payload. Backend menolak peran lain pada endpoint ini, jadi field yang
+     * pasti ditolak hanya membuat form gagal dengan alasan yang membingungkan.
+     */
     register: (payload: {
       email: string;
       password: string;
       name: string;
       phone?: string;
-      role: 'CUSTOMER' | 'UMKM' | 'COURIER';
     }) =>
-      request<AuthResult>('/auth/register', {
+      request<EmailVerificationChallenge>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
+    verifyCustomerEmail: (email: string, code: string) =>
+      request<AuthResult>('/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({ email, code }),
+      }),
+    resendCustomerEmailOtp: (email: string) =>
+      request<EmailVerificationChallenge>('/auth/resend-verification', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }),
     me: () => request<User>('/auth/me'),
+    updateMyProfile: (payload: { name: string; phone?: string }) =>
+      request<User>('/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+    updateAvatar: (avatar: File) => {
+      const form = new FormData();
+      form.append('avatar', avatar);
+      return request<User>('/auth/profile/avatar', {
+        method: 'PUT',
+        body: form,
+      });
+    },
 
     // ── Alamat pengiriman ──
     //
@@ -454,6 +498,7 @@ export function createApiClient({
           ...(filter.search ? { search: filter.search } : {}),
           ...(filter.categoryId ? { categoryId: filter.categoryId } : {}),
           ...(filter.kopdesId ? { kopdesId: filter.kopdesId } : {}),
+          ...(filter.umkmId ? { umkmId: filter.umkmId } : {}),
           ...(filter.minPrice != null ? { minPrice: filter.minPrice } : {}),
           ...(filter.maxPrice != null ? { maxPrice: filter.maxPrice } : {}),
           ...(filter.inStock ? { inStock: 'true' } : {}),
@@ -527,6 +572,31 @@ export function createApiClient({
         },
       } satisfies Paginated<Mitra>;
     },
+    getMitra: (id: string) =>
+      request<Mitra>(`/umkm/${encodeURIComponent(id)}`),
+    getNearbyMitra: async (query: NearbyQuery, page = 1, limit = 10) => {
+      const body = await rawRequest(
+        `/umkm/nearby${toQuery({
+          latitude: query.latitude,
+          longitude: query.longitude,
+          radius: query.radiusKm ?? 10,
+          page,
+          limit,
+          ...(query.search ? { search: query.search } : {}),
+          ...(query.openNow ? { openNow: 'true' } : {}),
+        })}`,
+      );
+      const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
+      return {
+        items: asArray<Mitra>(data.umkm),
+        meta: {
+          total: Number(data.total ?? 0),
+          page: Number(data.page ?? page),
+          limit: Number(data.limit ?? limit),
+          totalPages: Number(data.totalPages ?? 1),
+        },
+      } satisfies Paginated<Mitra>;
+    },
     getKoperasi: (id: string) =>
       request<KoperasiDetail>(`/koperasi/${encodeURIComponent(id)}`),
 
@@ -553,9 +623,18 @@ export function createApiClient({
     },
     updateKopdesProfile: (payload: UpdateKopdesProfileInput) =>
       request<Koperasi>('/admin/kopdes/profile', {
-        method: 'PATCH',
+        method: 'PUT',
         body: JSON.stringify(payload),
       }),
+    updateKopdesMedia: (media: { logo?: File; banner?: File }) => {
+      const form = new FormData();
+      if (media.logo) form.append('logo', media.logo);
+      if (media.banner) form.append('banner', media.banner);
+      return request<Koperasi>('/admin/kopdes/profile/media', {
+        method: 'PUT',
+        body: form,
+      });
+    },
     getMemberCounts: () =>
       request<Record<MembershipStatus, number>>('/admin/members/counts'),
     reviewMembership: (
@@ -569,9 +648,32 @@ export function createApiClient({
       }),
 
     getCategories: () => request<Category[]>('/categories'),
+    createCategory: (name: string, description?: string) =>
+      request<Category>('/categories', {
+        method: 'POST',
+        body: JSON.stringify({ name, ...(description ? { description } : {}) }),
+      }),
     /// Iklan utama. Gagal memuatnya tidak boleh menghentikan katalog, jadi
     /// pemanggilnya yang memutuskan cadangannya.
-    getBanners: () => request<Banner[]>('/banners'),
+    getBanners: async () => {
+      const body = await rawRequest('/banners');
+      const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
+      return asArray<Banner>(data.banners);
+    },
+    getBestSellers: async (limit = 8, period: '7d' | '30d' | 'all' = '30d') => {
+      const body = await rawRequest(
+        `/products/best-sellers${toQuery({ limit, period })}`,
+      );
+      const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
+      return asArray<DiscoveryProduct>(data.products);
+    },
+    getFeaturedUmkmProducts: async (limit = 8) => {
+      const body = await rawRequest(
+        `/umkm/products/featured${toQuery({ limit })}`,
+      );
+      const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
+      return asArray<DiscoveryProduct>(data.products);
+    },
     /// Detail produk Mitra UMKM — endpoint terpisah dari produk Kopdes.
     getUmkmProduct: (id: string) =>
       request<Record<string, unknown>>(`/umkm/products/${id}`),
@@ -767,17 +869,18 @@ export function createApiClient({
       }),
 
     // ── Pembayaran ──
-    // Yang dikirim hanya id pesanan dan metode. Nominal, diskon, dan total
+    // Yang dikirim hanya id pesanan. Kanal pembayaran dipilih di Snap;
+    // nominal, diskon, dan total
     // dihitung ulang backend dari database; mengirimnya dari sini berarti
     // mengirim angka yang bisa diubah siapa pun lewat DevTools.
-    createPayment: (orderId: string, paymentMethod: PaymentMethodCode) =>
+    createPayment: (orderId: string) =>
       request<PaymentSnapshot>('/payments/create', {
         method: 'POST',
-        body: JSON.stringify({ orderId, paymentMethod }),
+        body: JSON.stringify({ orderId }),
       }),
     getPayment: (orderId: string) =>
       request<PaymentSnapshot>(`/payments/${encodeURIComponent(orderId)}`),
-    /** Menanyakan status langsung ke Midtrans; jaring pengaman bila webhook telat. */
+    /** Membaca status terakhir yang sudah disahkan webhook Midtrans. */
     checkPaymentStatus: (orderId: string) =>
       request<PaymentSnapshot>(
         `/payments/${encodeURIComponent(orderId)}/check-status`,
@@ -834,6 +937,24 @@ export function createApiClient({
         method: 'POST',
         body: JSON.stringify(payload),
       }),
+    getSuperAdminAccounts: () =>
+      request<SuperAdminUser[]>('/super-admin/accounts'),
+    createSuperAdminAccount: (payload: CreateSuperStaffInput) =>
+      request<SuperAdminUser>('/super-admin/accounts', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    updateSuperAdminAccount: (id: string, payload: UpdateSuperStaffInput) =>
+      request<SuperAdminUser>(`/super-admin/accounts/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+    deleteSuperAdminAccount: (id: string) =>
+      request<{ success: boolean }>(`/super-admin/accounts/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      }),
+    getSuperAdminUsers: (filters: { role?: string; search?: string } = {}) =>
+      request<SuperAdminUser[]>(`/super-admin/users${toQuery(filters)}`),
 
     // ── Asisten AI staf ──
     // Endpoint terpisah dari `/ai/chat` dan dijaga `ai:assist`.
@@ -845,6 +966,173 @@ export function createApiClient({
       const text = body?.response ?? body?.data;
       return typeof text === 'string' ? text : '';
     },
+
+    // ── Portal penjual UMKM ──
+    // Jalurnya sama persis dengan service Flutter di `features/umkm/data`.
+    getSellerDashboard: () => request<SellerDashboard>('/seller/dashboard'),
+    getSellerStatistics: () => request<Array<Record<string, unknown>>>('/seller/statistics'),
+    getSellerProfile: () => request<SellerStore>('/seller/profile'),
+    updateSellerProfile: (payload: Pick<SellerStore, 'businessName' | 'description' | 'address' | 'phone'>) =>
+      request<SellerStore>('/seller/profile', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+    updateSellerMedia: (media: { logo?: File; banner?: File }) => {
+      const form = new FormData();
+      if (media.logo) form.append('logo', media.logo);
+      if (media.banner) form.append('banner', media.banner);
+      return request<SellerStore>('/seller/profile/media', {
+        method: 'PUT',
+        body: form,
+      });
+    },
+    getSellerProducts: async (params: {
+      search?: string;
+      categoryId?: string;
+      stockStatus?: 'safe' | 'low' | 'out';
+      page?: number;
+      limit?: number;
+    } = {}) => {
+      const body = await rawRequest(`/seller/products${toQuery({
+        page: params.page ?? 1,
+        limit: params.limit ?? 20,
+        ...(params.search ? { search: params.search } : {}),
+        ...(params.categoryId ? { categoryId: params.categoryId } : {}),
+        ...(params.stockStatus ? { stockStatus: params.stockStatus } : {}),
+      })}`);
+      const data = (body?.data ?? body ?? {}) as Record<string, unknown>;
+      const meta = (data.meta ?? {
+        total: data.total ?? 0,
+        page: data.page ?? params.page ?? 1,
+        limit: data.limit ?? params.limit ?? 20,
+        totalPages: data.totalPages ?? 1,
+      }) as PageMeta;
+      return {
+        products: asArray<SellerProduct>(data.products),
+        meta,
+        summary: (data.summary ?? { safe: 0, low: 0, out: 0 }) as SellerProductPage['summary'],
+        lowStockThreshold: Number(data.lowStockThreshold ?? 5),
+      } satisfies SellerProductPage;
+    },
+    getSellerProduct: (id: string) =>
+      request<SellerProduct>(`/seller/products/${encodeURIComponent(id)}`),
+    getSellerProductCategories: () =>
+      request<Array<Category & { productCount?: number }>>('/seller/products/categories'),
+    saveSellerProduct: (
+      payload: SellerProductInput,
+      images: File[] = [],
+      id?: string,
+    ) => {
+      const form = new FormData();
+      for (const [key, value] of Object.entries(payload)) {
+        if (value !== undefined) form.append(key, String(value));
+      }
+      images.forEach((file) => form.append('images', file));
+      return request<SellerProduct>(
+        id ? `/seller/products/${encodeURIComponent(id)}` : '/seller/products',
+        { method: id ? 'PUT' : 'POST', body: form },
+      );
+    },
+    updateSellerProduct: (id: string, payload: Partial<SellerProductInput>) => {
+      const form = new FormData();
+      for (const [key, value] of Object.entries(payload)) {
+        if (value !== undefined) form.append(key, String(value));
+      }
+      return request<SellerProduct>(`/seller/products/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: form,
+      });
+    },
+    deleteSellerProduct: (id: string) =>
+      rawRequest(`/seller/products/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    adjustSellerStock: (productId: string, delta: number, reason: string) =>
+      request<{ currentStock: number }>('/seller/inventory/adjust', {
+        method: 'POST',
+        body: JSON.stringify({
+          umkmProductId: productId,
+          type: delta > 0 ? 'IN' : 'OUT',
+          quantity: Math.abs(delta),
+          reason,
+        }),
+      }),
+    getSellerOrders: () => request<SellerOrder[]>('/seller/orders'),
+    getSellerOrder: (id: string) =>
+      request<SellerOrder>(`/seller/orders/${encodeURIComponent(id)}`),
+    updateSellerOrderStatus: (id: string, status: string) =>
+      request<SellerOrder>(`/seller/orders/${encodeURIComponent(id)}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+      }),
+
+    // ── Portal kurir ──
+    getCourierDeliveries: () =>
+      request<CourierDelivery[]>('/courier/deliveries'),
+    markCourierDelivered: (id: string) =>
+      request<CourierDelivery>(`/courier/deliveries/${encodeURIComponent(id)}/mark-delivered`, {
+        method: 'PATCH',
+      }),
+    updateCourierLocation: (id: string, latitude: number, longitude: number) =>
+      request<CourierDelivery>(`/courier/deliveries/${encodeURIComponent(id)}/location`, {
+        method: 'POST',
+        body: JSON.stringify({ latitude, longitude }),
+      }),
+
+    // ── Moderasi Admin Kopdes ──
+    getAdminMitra: (status?: string, search?: string) =>
+      request<AdminMitra[]>(`/admin/umkm${toQuery({
+        ...(status ? { status } : {}),
+        ...(search ? { search } : {}),
+      })}`),
+    verifyAdminMitra: (id: string, status: string, rejectionReason?: string) =>
+      request<AdminMitra>(`/admin/umkm/${encodeURIComponent(id)}/verify`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, ...(rejectionReason ? { rejectionReason } : {}) }),
+      }),
+    updateAdminMitraLocation: (id: string, latitude: number, longitude: number, category?: string) =>
+      request<AdminMitra>(`/admin/umkm/${encodeURIComponent(id)}/location`, {
+        method: 'PATCH',
+        body: JSON.stringify({ latitude, longitude, ...(category ? { category } : {}) }),
+      }),
+    getAdminUmkmProducts: (search?: string) =>
+      request<AdminUmkmProduct[]>(`/admin/umkm/products${toQuery({
+        ...(search ? { search } : {}),
+      })}`),
+    setAdminUmkmProductActive: (id: string, isActive: boolean, reason?: string) =>
+      request<AdminUmkmProduct>(`/admin/umkm/products/${encodeURIComponent(id)}/takedown`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive, ...(reason ? { reason } : {}) }),
+      }),
+
+    // ── Konten & chat lintas peran ──
+    getContentPage: (slug: string) =>
+      request<ContentPage>(`/content/${encodeURIComponent(slug)}`),
+    getConversations: (channel?: ChatChannel) =>
+      request<ChatConversation[]>(`/chat/conversations${channel ? toQuery({ channel }) : ''}`),
+    startConversation: (recipientId: string, channel?: ChatChannel) =>
+      request<ChatConversation>('/chat/conversations', {
+        method: 'POST',
+        body: JSON.stringify({ recipientId, ...(channel ? { channel } : {}) }),
+      }),
+    startProductConversation: (productId: string, sellerType: 'KOPDES' | 'UMKM') =>
+      request<ChatConversation>(
+        `/chat/conversations/${sellerType === 'UMKM' ? 'umkm-product' : 'product'}/${encodeURIComponent(productId)}/seller`,
+        { method: 'POST' },
+      ),
+    startSellerOrderConversation: (orderId: string, target: 'customer' | 'courier') =>
+      request<ChatConversation>(`/chat/conversations/order/${encodeURIComponent(orderId)}/${target}`, {
+        method: 'POST',
+      }),
+    getChatMessages: (conversationId: string) =>
+      request<ChatMessage[]>(`/chat/conversations/${encodeURIComponent(conversationId)}/messages`),
+    sendChatMessage: (conversationId: string, content: string) =>
+      request<ChatMessage>(`/chat/conversations/${encodeURIComponent(conversationId)}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      }),
+    markConversationRead: (conversationId: string) =>
+      request<{ success: boolean }>(`/chat/conversations/${encodeURIComponent(conversationId)}/read`, {
+        method: 'PATCH',
+      }),
   };
 }
 
@@ -853,11 +1141,25 @@ export type ApiClient = ReturnType<typeof createApiClient>;
 export type {
   MitraCategory,
   Mitra,
+  SellerDashboard,
+  SellerProduct,
+  SellerProductInput,
+  SellerProductPage,
+  SellerOrder,
+  SellerStore,
+  CourierDelivery,
+  AdminMitra,
+  AdminUmkmProduct,
+  ChatChannel,
+  ChatConversation,
+  ChatMessage,
+  ContentPage,
   UpdateKopdesProfileInput,
   MembershipStatus,
   Membership,
   ApplyMembershipInput,
   Banner,
+  DiscoveryProduct,
   Address,
   AssignableRole,
   Koperasi,
@@ -869,6 +1171,7 @@ export type {
   PaymentView,
   ApiResponse,
   AuthResult,
+  EmailVerificationChallenge,
   Cart,
   CreateAddressInput,
   CartItem,
@@ -911,5 +1214,8 @@ export type {
   KopdesStats,
   SubmitApplicationInput,
   SuperAdminOverview,
+  SuperAdminUser,
+  CreateSuperStaffInput,
+  UpdateSuperStaffInput,
 } from './types';
 export { Permissions, can } from './types';

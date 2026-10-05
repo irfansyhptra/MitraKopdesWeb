@@ -42,7 +42,9 @@ export function Sidebar({ user }: { user: User | null }) {
       <div className="sidebar__foot">
         <Link href="/profile" className="sidebar__user">
           <span className="sidebar__avatar" aria-hidden="true">
-            <UserIcon size={17} />
+            {user?.avatarUrl
+              ? <img src={user.avatarUrl} alt="" />
+              : <UserIcon size={17} />}
           </span>
           <span>
             <strong>{user?.name ?? 'Warga Desa'}</strong>

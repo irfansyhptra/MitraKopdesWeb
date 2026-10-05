@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { useSession } from '@/lib/useSession';
 import { useCartCount, useMe } from '@/lib/useMe';
 import { Sidebar } from './Sidebar';
-import { ShoppingCart } from '@shared/design/icons';
+import { Bell, ShoppingCart } from '@shared/design/icons';
 import { isActive, NAV } from './nav';
 
 /**
@@ -26,20 +26,31 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Portal pegawai punya kerangkanya sendiri. Pegawai yang sedang memproses
   // pesanan tidak sedang berbelanja, jadi navigasi pelanggan tidak ikut
   // digambar di sana.
-  if (pathname.startsWith('/pegawai') || pathname.startsWith('/super-admin'))
+  if (
+    pathname.startsWith('/pegawai') ||
+    pathname.startsWith('/super-admin') ||
+    (pathname === '/admin' || pathname.startsWith('/admin/')) ||
+    (pathname === '/umkm' || pathname.startsWith('/umkm/')) ||
+    (pathname === '/courier' || pathname.startsWith('/courier/'))
+  )
     return <>{children}</>;
 
   return (
     <div className="shell">
       <Sidebar user={me} />
 
+      {/*
+        Tiga kelompok kaca: kapsul menu, kotak keranjang, lalu kapsul
+        notifikasi dan akun. Bilahnya sendiri tidak punya permukaan, jadi isi
+        halaman terlihat di celah antar kelompok saat bergulir.
+      */}
       <header className="topbar">
         <div className="topbar__inner">
-          <Link href="/" className="brand" aria-label="Beranda KMP Mitra">
+          <Link href="/" className="navgroup brand" aria-label="Beranda KMP Mitra">
             KMP<span>Mitra</span>
           </Link>
 
-          <nav className="topnav" aria-label="Navigasi utama">
+          <nav className="navgroup navgroup--menu" aria-label="Navigasi ringkas">
             {NAV.map((item) => (
               <Link
                 key={item.href}
@@ -51,14 +62,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="topbar__actions">
+          <div className="navgroup navgroup--square">
             <Link
-              href="/orders"
+              href="/cart"
               className="icon-btn"
               aria-label={
-                cartCount > 0
-                  ? `Keranjang, ${cartCount} produk`
-                  : 'Keranjang'
+                cartCount > 0 ? `Keranjang, ${cartCount} produk` : 'Keranjang'
               }
             >
               <ShoppingCart size={18} aria-hidden="true" />
@@ -69,7 +78,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </span>
               )}
             </Link>
-            <AuthAction />
+          </div>
+
+          <div className="topbar__account">
+            {/* Belum ada endpoint notifikasi, jadi belum ada lencana yang
+                jujur bisa ditampilkan di sini; tautannya ke halaman akun,
+                tempat pengaturan notifikasi akan tinggal. */}
+            <Link href="/profile" className="icon-btn" aria-label="Notifikasi">
+              <Bell size={18} aria-hidden="true" />
+            </Link>
+            <AuthAction name={me?.name} avatarUrl={me?.avatarUrl} />
           </div>
         </div>
       </header>
@@ -96,7 +114,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 /**
- * Tombol "Masuk" hanya untuk yang belum masuk.
+ * Akun di kapsul kanan: avatar untuk yang sudah masuk, tombol "Masuk" untuk
+ * tamu.
  *
  * Selama keadaan sesi belum diketahui — render di server, dan sesaat sebelum
  * hidrasi — slotnya dibiarkan kosong dengan lebar tetap. Menebak "belum
@@ -104,7 +123,7 @@ export function AppShell({ children }: { children: ReactNode }) {
  * sebenarnya sudah masuk, dan menebak sebaliknya menyembunyikan satu-satunya
  * jalan masuk bagi tamu.
  */
-function AuthAction() {
+function AuthAction({ name, avatarUrl }: { name?: string; avatarUrl?: string | null }) {
   const signedIn = useSession();
 
   if (signedIn === null) {
@@ -113,8 +132,10 @@ function AuthAction() {
 
   if (signedIn) {
     return (
-      <Link href="/profile" className="kc-btn kc-btn--secondary">
-        Akun Saya
+      <Link href="/profile" className="topbar__avatar" aria-label="Akun Saya">
+        {avatarUrl
+          ? <img src={avatarUrl} alt="" />
+          : <span aria-hidden="true">{initials(name)}</span>}
       </Link>
     );
   }
@@ -124,4 +145,14 @@ function AuthAction() {
       Masuk
     </Link>
   );
+}
+
+/** Dua huruf pertama dari nama; tanpa nama, ikon orang yang netral. */
+function initials(name?: string): string {
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '·';
+  return parts
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join('');
 }

@@ -2,29 +2,18 @@ import Link from 'next/link';
 import { publicApi } from '@/lib/api';
 import { HomeHero } from '@/components/HomeHero';
 import { NearbyKopdes } from '@/components/NearbyKopdes';
-import { Card, Message, SectionHeader } from '@shared/design/ui';
+import { Message, SectionHeader } from '@shared/design/ui';
 import {
+  ChevronRight,
   categoryIcon,
   Handshake,
   Package,
   Store,
+  Truck,
   tintAt,
 } from '@shared/design/icons';
 import { formatRupiah, toRupiah } from '@shared/format';
-import type { Category, MarketplaceProduct } from '@shared/api';
-
-/**
- * Beranda pelanggan — padanan `HomeScreen` pada aplikasi Flutter.
- *
- * Urutan seksinya sama dengan versi mobile: header + pencarian, ringkasan
- * keanggotaan, kategori, Promo Terbaik, Produk UMKM Pilihan, Produk Terlaris,
- * lalu dua banner ajakan di kaki halaman.
- *
- * Server component untuk semua yang tidak bergantung pada pembukanya. Tiap
- * seksi memanggil datanya lewat `safe()`, jadi satu bagian yang gagal tidak
- * mengosongkan beranda — perilaku yang sama dengan section-section di
- * `HomeScreen` yang masing-masing punya state sendiri.
- */
+import type { Banner, Category, DiscoveryProduct } from '@shared/api';
 
 export const revalidate = 60;
 
@@ -36,57 +25,54 @@ async function safe<T>(work: Promise<T>, fallback: T): Promise<T> {
   }
 }
 
+/**
+ * Beranda pelanggan memakai endpoint discovery khusus agar label “pilihan”
+ * dan “terlaris” mencerminkan data backend, bukan sekadar produk terbaru.
+ * Setiap seksi gagal secara mandiri sehingga satu endpoint yang bermasalah
+ * tidak menjatuhkan seluruh halaman.
+ */
 export default async function HomePage() {
-  const [bestSellers, featured, categories] = await Promise.all([
-    safe(
-      publicApi
-        .getMarketplaceProducts({ sellerType: 'ALL', sort: 'newest' }, 1, 8)
-        .then((r) => r.items),
-      [] as MarketplaceProduct[],
-    ),
-    safe(
-      publicApi
-        .getMarketplaceProducts({ sellerType: 'UMKM', sort: 'newest' }, 1, 8)
-        .then((r) => r.items),
-      [] as MarketplaceProduct[],
-    ),
+  const [bestSellers, featured, categories, banners] = await Promise.all([
+    safe(publicApi.getBestSellers(8, '30d'), [] as DiscoveryProduct[]),
+    safe(publicApi.getFeaturedUmkmProducts(8), [] as DiscoveryProduct[]),
     safe(publicApi.getCategories(), [] as Category[]),
+    safe(publicApi.getBanners(), [] as Banner[]),
   ]);
 
-  const empty = bestSellers.length === 0 && featured.length === 0;
+  const productsEmpty = bestSellers.length === 0 && featured.length === 0;
 
   return (
-    <div className="stack-lg">
+    <div className="home-page">
       <HomeHero>
         <NearbyKopdes />
       </HomeHero>
 
+      {banners[0] && <PromoBanner banner={banners[0]} />}
+
       {categories.length > 0 && (
-        <section>
+        <section className="home-section">
           <SectionHeader
             title="Kategori"
-            actionLabel="Semua"
+            actionLabel="Lihat Semua"
             href="/marketplace"
           />
-          {/* Grid, bukan rail: di beranda kategori adalah peta isi toko —
-              yang tersembunyi di luar layar praktis tidak pernah dibuka. */}
           <div className="catgrid">
-            {categories.map((cat, i) => {
-              const Icon = categoryIcon(cat.name);
+            {categories.slice(0, 9).map((category, index) => {
+              const Icon = categoryIcon(category.name);
               return (
                 <Link
-                  key={cat.id}
-                  href={`/marketplace?categoryId=${cat.id}`}
+                  key={category.id}
+                  href={`/marketplace?categoryId=${category.id}`}
                   className="catgrid__item"
                 >
                   <span
                     className="catgrid__icon"
-                    style={{ ['--tile-tint' as string]: tintAt(i) }}
+                    style={{ ['--tile-tint' as string]: tintAt(index) }}
                     aria-hidden="true"
                   >
-                    <Icon size={22} strokeWidth={2.1} />
+                    <Icon size={22} strokeWidth={2} />
                   </span>
-                  <span className="catgrid__label">{cat.name}</span>
+                  <span className="catgrid__label">{category.name}</span>
                 </Link>
               );
             })}
@@ -94,7 +80,24 @@ export default async function HomePage() {
         </section>
       )}
 
-      {empty && (
+      {featured.length > 0 && (
+        <ProductSection
+          title="Produk UMKM Pilihan"
+          href="/marketplace?sellerType=UMKM"
+          products={featured}
+        />
+      )}
+
+      {bestSellers.length > 0 && (
+        <ProductSection
+          title="Produk Terlaris"
+          href="/marketplace"
+          products={bestSellers}
+          showRank
+        />
+      )}
+
+      {productsEmpty && (
         <Message
           title="Produk belum tersedia"
           body="Katalog desa belum terisi, atau server belum bisa dihubungi."
@@ -103,119 +106,138 @@ export default async function HomePage() {
         />
       )}
 
-      {featured.length > 0 && (
-        <section>
-          <SectionHeader
-            title="Produk UMKM Pilihan"
-            actionLabel="Semua"
-            href="/marketplace?sellerType=UMKM"
-          />
-          <div className="kc-rail kc-rail--wrap">
-            {featured.slice(0, 6).map((product) => (
-              <PromoTile key={product.id} product={product} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {bestSellers.length > 0 && (
-        <section>
-          <SectionHeader
-            title="Produk Terlaris"
-            actionLabel="Semua"
-            href="/marketplace"
-          />
-          <div className="kc-grid">
-            {bestSellers.slice(0, 8).map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <Card pad={false}>
-        <Link href="/marketplace" className="kc-banner">
-          <span className="kc-banner__icon" aria-hidden="true">
-            <Store size={22} />
-          </span>
-          <span>
-            <span className="kc-banner__title">Belanja di desa sendiri</span>
-            <span className="kc-banner__body">
-              Barang Kopdes dan mitra UMKM, diantar kurir desa atau diambil
-              langsung tanpa antre.
-            </span>
-          </span>
+      <section className="home-community">
+        <div>
+          <span className="home-community__eyebrow">Belanja dekat, dampak lebih besar</span>
+          <h2>Belanja Lokal, Desa Lebih Kuat</h2>
+          <p>
+            Setiap transaksi membantu Kopdes dan pelaku UMKM tumbuh bersama
+            warga di sekitarnya.
+          </p>
+        </div>
+        <Link href="/marketplace" className="kc-btn kc-btn--primary">
+          Mulai Belanja
+          <ChevronRight size={16} aria-hidden="true" />
         </Link>
-      </Card>
+      </section>
 
-      <Card pad={false}>
-        <Link href="/profile" className="kc-banner kc-banner--soft">
-          <span className="kc-banner__icon" aria-hidden="true">
-            <Handshake size={22} />
-          </span>
-          <span>
-            <span className="kc-banner__title">Jadi mitra UMKM Kopdes</span>
-            <span className="kc-banner__body">
-              Daftarkan usahamu lewat koperasi desa dan jual barangmu di
-              etalase yang sama.
-            </span>
-          </span>
+      <section className="home-member-banner">
+        <span className="home-member-banner__icon" aria-hidden="true">
+          <Handshake size={25} />
+        </span>
+        <div>
+          <h2>Jadi anggota KMP Mitra</h2>
+          <p>
+            Masuk ke profil, pilih Kopdes, lalu ajukan keanggotaan untuk
+            menikmati layanan koperasi desamu.
+          </p>
+        </div>
+        <Link href="/profile" className="kc-btn kc-btn--secondary">
+          Daftar Anggota
         </Link>
-      </Card>
+      </section>
     </div>
   );
 }
 
-function hrefFor(product: MarketplaceProduct): string {
-  return product.sellerType === 'UMKM'
-    ? `/umkm-product/${product.id}`
-    : `/product/${product.id}`;
+function ProductSection({
+  title,
+  href,
+  products,
+  showRank = false,
+}: {
+  title: string;
+  href: string;
+  products: DiscoveryProduct[];
+  showRank?: boolean;
+}) {
+  return (
+    <section className="home-section">
+      <SectionHeader title={title} actionLabel="Lihat Semua" href={href} />
+      <div className="home-product-grid">
+        {products.slice(0, 8).map((product) => (
+          <DiscoveryProductCard
+            key={`${product.source}-${product.id}`}
+            product={product}
+            showRank={showRank}
+          />
+        ))}
+      </div>
+    </section>
+  );
 }
 
-/** Kartu ringkas untuk rail mendatar — padanan `AppleProductTile`. */
-function PromoTile({ product }: { product: MarketplaceProduct }) {
-  // Endpoint katalog tidak mengirim harga diskon; harga coret hanya ada di
-  // halaman detail, yang membacanya dari produknya langsung.
-  const price = toRupiah(product.price);
+function DiscoveryProductCard({
+  product,
+  showRank,
+}: {
+  product: DiscoveryProduct;
+  showRank: boolean;
+}) {
+  const detail =
+    product.source === 'UMKM'
+      ? `/umkm-product/${product.id}`
+      : `/product/${product.id}`;
 
   return (
-    <Link href={hrefFor(product)} className="kc-promo kc-card--tap">
-      <div className="kc-promo__media">
+    <Link href={detail} className="home-product-card">
+      <div className="home-product-card__media">
+        {showRank && product.rank && (
+          <span className="home-product-card__rank">#{product.rank}</span>
+        )}
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.imageUrl} alt={product.name} loading="lazy" />
         ) : (
-          <Package size={30} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
+          <Package size={32} aria-hidden="true" />
         )}
-
       </div>
-      <div className="kc-promo__body">
-        <p className="kc-promo__name">{product.name}</p>
-        <p className="kc-promo__sub">{product.sellerName}</p>
-        <p className="kc-promo__price">{formatRupiah(price)}</p>
+      <div className="home-product-card__body">
+        <p className="home-product-card__source">
+          {product.source === 'UMKM' ? 'UMKM' : 'Kopdes'}
+        </p>
+        <h3>{product.name}</h3>
+        <p className="home-product-card__seller">{product.sellerName}</p>
+        <div className="home-product-card__foot">
+          <strong>{formatRupiah(toRupiah(product.price))}</strong>
+          {product.soldCount != null && (
+            <span>{product.soldCount} terjual</span>
+          )}
+        </div>
       </div>
     </Link>
   );
 }
 
-function ProductCard({ product }: { product: MarketplaceProduct }) {
-  const price = toRupiah(product.price);
+function PromoBanner({ banner }: { banner: Banner }) {
+  const href =
+    banner.ctaRoute && !['/products', '/umkm'].includes(banner.ctaRoute)
+      ? banner.ctaRoute
+      : '/marketplace';
 
   return (
-    <Link href={hrefFor(product)} className="kc-product kc-card--tap">
-      <div className="kc-product__media">
-        {product.imageUrl ? (
+    <section className="home-promo">
+      <span className="home-promo__icon" aria-hidden="true">
+        {banner.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.imageUrl} alt={product.name} loading="lazy" />
+          <img src={banner.imageUrl} alt="" />
         ) : (
-          <Package size={30} aria-hidden="true" style={{ color: 'var(--muted-soft)' }} />
+          <Truck size={28} />
         )}
+      </span>
+      <div className="home-promo__copy">
+        {banner.badge && <span className="home-promo__badge">{banner.badge}</span>}
+        <h2>
+          {banner.title}
+          {banner.highlight && <em> {banner.highlight}</em>}
+        </h2>
+        {banner.description && <p>{banner.description}</p>}
       </div>
-      <div className="kc-product__body">
-        <p className="kc-product__name">{product.name}</p>
-        <p className="kc-product__seller">{product.sellerName}</p>
-        <p className="kc-product__price">{formatRupiah(price)}</p>
-      </div>
-    </Link>
+      <Link href={href} className="home-promo__action">
+        {banner.ctaLabel ?? 'Lihat Sekarang'}
+        <ChevronRight size={16} aria-hidden="true" />
+      </Link>
+      <Store className="home-promo__watermark" size={128} aria-hidden="true" />
+    </section>
   );
 }

@@ -66,7 +66,7 @@ export function usePaymentStatus(orderId: string, enabled = true) {
     }
   }, [orderId]);
 
-  /** Menanyakan ke Midtrans — dipakai tombol, dan sesekali oleh polling. */
+  /** Membaca ulang status database yang sudah disahkan webhook. */
   const refresh = useCallback(async () => {
     setChecking(true);
     try {

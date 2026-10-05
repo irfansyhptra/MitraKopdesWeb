@@ -134,6 +134,14 @@
   font-size: 15px;
   font-weight: 700;
   color: #fff;
+  overflow: hidden;
+}
+
+.staff-header__avatar img,
+.staff-profile__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .staff-header__hello {
@@ -674,6 +682,8 @@
 .staff-dialog { color: var(--st-ink); background: var(--st-surface); padding: var(--sp-xl); border: 0; border-radius: var(--st-r-surface); width: min(460px, calc(100vw - 32px)); max-height: 85dvh; margin: auto; box-shadow: var(--sh-card-hover); }
 .staff-dialog::backdrop { background: rgba(29, 29, 31, .45); }
 .staff-dialog > .staff-actions { margin-top: var(--sp-lg); }
+.staff-modal { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: var(--sp-base); background: rgba(29, 29, 31, .44); backdrop-filter: blur(8px); }
+.staff-modal__panel { width: min(620px, 100%); max-height: min(90dvh, 760px); overflow-y: auto; box-shadow: var(--sh-card-hover); }
 .staff-card-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-sm); }
 .staff-delivery-grid, .staff-courier-grid { display: grid; gap: var(--sp-base); grid-template-columns: minmax(0, 1fr); }
 .staff-courier { display: flex; align-items: center; gap: var(--sp-md); padding: var(--sp-sm) 0; }
@@ -714,6 +724,96 @@
 .staff-saved { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-base); padding-block: var(--sp-xxl); }
 .staff-saved > svg { color: var(--st-success); }
 .staff-saved > a { width: auto; }
+
+/* ── Portal penjual UMKM ───────────────────────────────────────────────
+   Memakai ritme yang sama dengan portal pegawai, tetapi gridnya mengikuti
+   isi: tile singkat tetap kecil dan kartu produk baru bertambah kolom ketika
+   ruang memang cukup. */
+.seller-portal .staff__body { max-width: 1120px; }
+.seller-portal .staff-tile { color: var(--st-primary); }
+.seller-portal .staff-tile svg { color: currentColor; }
+
+.seller-revenue {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-base);
+}
+.seller-revenue > div { min-width: 0; }
+.seller-revenue > div + div { border-left: 1px solid var(--st-divider); padding-left: var(--sp-base); }
+.seller-revenue strong { display: block; margin-top: 2px; font-size: clamp(19px, 4vw, 28px); overflow-wrap: anywhere; }
+.seller-revenue span { display: block; margin-top: 2px; color: var(--st-muted); font-size: 12px; }
+
+.seller-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: var(--sp-md);
+}
+.seller-stat { display: flex; flex-direction: column; gap: 3px; min-height: 132px; }
+.seller-stat > strong { margin-top: var(--sp-sm); font-size: 21px; line-height: 1.1; overflow-wrap: anywhere; }
+.seller-stat > span:not(.staff-feature-icon) { font-size: 12px; font-weight: 650; }
+.seller-stat > small { color: var(--st-muted); font-size: 11px; }
+.seller-actions { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+
+.seller-page-heading { align-items: flex-start; flex-wrap: wrap; }
+.seller-page-heading > .staff-btn { width: auto; }
+.seller-product-tools { display: flex; flex-direction: column; gap: var(--sp-md); margin-bottom: var(--sp-base); }
+.seller-search { display: flex; align-items: center; gap: var(--sp-sm); min-height: 44px; padding-inline: var(--sp-md); border: 1px solid var(--st-divider); border-radius: var(--r-pill); }
+.seller-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; }
+.seller-filter-row { display: flex; gap: var(--sp-sm); overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.seller-filter-row .staff-chip { border: 1px solid var(--st-divider); cursor: pointer; white-space: nowrap; }
+.seller-filter-row .staff-chip[aria-pressed='true'] { color: #fff; background: var(--st-primary); border-color: var(--st-primary); }
+
+.seller-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr));
+  gap: var(--sp-md);
+}
+.seller-product-card { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: var(--sp-md); padding: var(--sp-md); }
+.seller-product-card__image { min-height: 150px; display: grid; place-items: center; overflow: hidden; border-radius: var(--st-r-tile); background: var(--st-bg); color: var(--st-muted); }
+.seller-product-card__image img { width: 100%; height: 100%; object-fit: cover; }
+.seller-product-card__body { display: flex; flex-direction: column; min-width: 0; gap: 5px; }
+.seller-product-card__body > div:first-child { display: flex; flex-wrap: wrap; gap: 4px; }
+.seller-product-card h2 { margin-top: 2px; font-size: 15px; line-height: 1.3; }
+.seller-product-card__actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: auto; padding-top: var(--sp-sm); }
+.seller-product-card__actions .staff-btn { width: auto; min-height: 36px; padding: 7px 10px; font-size: 11px; }
+.seller-pagination { display: flex; align-items: center; justify-content: center; gap: var(--sp-md); margin-top: var(--sp-lg); font-size: 12px; }
+.seller-pagination .staff-btn { width: auto; }
+
+.seller-order-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--sp-md); }
+.seller-order-card { display: flex; flex-direction: column; gap: var(--sp-md); }
+.seller-order-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-md); }
+.seller-order-card > header time { display: block; margin-top: 2px; color: var(--st-muted); font-size: 11px; }
+.seller-order-card__meta { display: grid; gap: 6px; color: var(--st-muted); font-size: 12px; }
+.seller-order-card__meta p { display: flex; align-items: flex-start; gap: 6px; }
+.seller-order-items { padding: var(--sp-sm); border-radius: var(--r-md); background: var(--st-bg); }
+.seller-order-items > div { display: flex; justify-content: space-between; gap: var(--sp-md); padding: 5px; font-size: 12px; }
+.seller-order-items span { display: flex; gap: 5px; min-width: 0; }
+.seller-order-total { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-md); }
+.seller-order-total span, .seller-order-detail { color: var(--st-muted); font-size: 12px; }
+.seller-order-total strong { color: var(--st-primary); font-size: 17px; }
+.seller-order-detail { display: grid; gap: 5px; }
+.seller-order-detail > div { display: flex; justify-content: space-between; gap: var(--sp-md); }
+.seller-order-detail dd { color: var(--st-ink); font-weight: 600; text-align: right; }
+
+.seller-profile-head { display: flex; align-items: center; gap: var(--sp-md); margin-bottom: var(--sp-base); }
+.seller-profile-head > span { width: 48px; height: 48px; display: grid; place-items: center; border-radius: var(--st-r-tile); color: var(--st-primary); background: var(--primary-tint); }
+.seller-profile-head h2 { font-size: 17px; }
+.seller-profile-head p { margin-top: 2px; color: var(--st-muted); font-size: 12px; }
+.seller-form-message { display: flex; align-items: center; gap: var(--sp-sm); color: var(--st-success); font-size: 13px; }
+
+.courier-portal .staff__body { max-width: 920px; }
+.courier-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: var(--sp-base); }
+.courier-metrics > div { min-width: 0; padding-inline: var(--sp-md); text-align: center; }
+.courier-metrics > div + div { border-left: 1px solid var(--st-divider); }
+.courier-metrics span { display: block; color: var(--st-muted); font-size: 11px; }
+.courier-metrics strong { display: block; margin-top: 4px; font-size: 20px; }
+
+@media (max-width: 419px) {
+  .seller-revenue { grid-template-columns: minmax(0, 1fr); }
+  .seller-revenue > div + div { border-left: 0; border-top: 1px solid var(--st-divider); padding-top: var(--sp-md); padding-left: 0; }
+  .seller-product-card { grid-template-columns: 92px minmax(0, 1fr); }
+  .seller-product-card__image { min-height: 126px; }
+}
 .staff-assistant { padding: var(--sp-lg); }
 .staff-assistant__welcome { text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--sp-md); padding-top: var(--sp-lg); }
 .staff-assistant__mark { display: grid; place-items: center; width: 80px; height: 80px; color: var(--st-primary); background: var(--primary-tint); border-radius: var(--st-r-nav); margin-bottom: var(--sp-sm); }

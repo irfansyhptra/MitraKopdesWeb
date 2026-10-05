@@ -16,6 +16,9 @@ import {
   Building2,
   ClipboardList,
   LayoutDashboard,
+  UsersRound,
+  ShieldCheck,
+  UserIcon,
   type LucideIcon,
 } from '@shared/design/icons';
 import type { User } from '@shared/api';
@@ -29,13 +32,16 @@ import type { User } from '@shared/api';
  * menu tidak menahan siapa pun yang memanggil API langsung.
  */
 
-const SuperCtx = createContext<User | null>(null);
+const SuperCtx = createContext<{ user: User | null; reload: () => void } | null>(null);
 export const useSuperAdmin = () => useContext(SuperCtx);
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: '/super-admin', label: 'Ikhtisar', icon: LayoutDashboard },
   { href: '/super-admin/pengajuan', label: 'Pengajuan', icon: ClipboardList },
   { href: '/super-admin/kopdes', label: 'Koperasi', icon: Building2 },
+  { href: '/super-admin/accounts', label: 'Akun Kopdes', icon: ShieldCheck },
+  { href: '/super-admin/users', label: 'Pengguna', icon: UsersRound },
+  { href: '/super-admin/profile', label: 'Profil', icon: UserIcon },
 ];
 
 export function SuperGate({ children }: { children: ReactNode }) {
@@ -102,7 +108,7 @@ export function SuperGate({ children }: { children: ReactNode }) {
   }
 
   return (
-    <SuperCtx.Provider value={user}>
+    <SuperCtx.Provider value={{ user, reload: () => void load() }}>
       <div className="staff">
         <header className="staff-header">
           <div className="staff-header__inner">
@@ -116,6 +122,11 @@ export function SuperGate({ children }: { children: ReactNode }) {
                   {user?.email ?? 'Memuat…'}
                 </p>
               </div>
+              <Link href="/super-admin/profile" className="staff-header__avatar" aria-label="Profil Super Admin">
+                {user?.avatarUrl
+                  ? <img src={user.avatarUrl} alt="" />
+                  : user?.name.trim()[0]?.toUpperCase() ?? 'S'}
+              </Link>
             </div>
             <p className="staff-header__hello">Selamat Bekerja,</p>
             <p className="staff-header__name">{user?.name ?? 'Super Admin'}</p>

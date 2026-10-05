@@ -65,10 +65,12 @@
   --glass-strong: rgba(255, 255, 255, 0.82);
   --glass-light: rgba(255, 255, 255, 0.48);
   --glass-border: rgba(255, 255, 255, 0.7);
+  /* Tepi untuk kelompok kaca yang mengambang di atas isi: nyaris tidak
+     terlihat, cukup untuk memisahkan kaca dari apa pun di belakangnya. */
+  --glass-border-soft: rgba(255, 255, 255, 0.38);
 
   /* ── Sidebar Apple Grid (desktop) ── */
   --sidebar-w: 260px;
-  --sidebar-inset: 16px;
 
   --blur-light: 16px;
   --blur: 24px;
@@ -180,7 +182,7 @@
 @media (min-width: 1024px) {
   :root {
     --page-padding: 32px;
-    --content-max: 1120px;
+    --content-max: 1200px;
   }
 }
 
@@ -241,7 +243,6 @@ html {
 .glass-strong,
 .glass-light {
   backdrop-filter: var(--glass-filter);
-  -webkit-backdrop-filter: var(--glass-filter);
   border: 1px solid var(--glass-border);
 }
 
@@ -252,13 +253,11 @@ html {
 .glass-strong {
   background: var(--glass-strong);
   backdrop-filter: var(--glass-filter-strong);
-  -webkit-backdrop-filter: var(--glass-filter-strong);
 }
 
 .glass-light {
   background: var(--glass-light);
   backdrop-filter: blur(var(--blur-light)) saturate(130%);
-  -webkit-backdrop-filter: blur(var(--blur-light)) saturate(130%);
 }
 
 /*

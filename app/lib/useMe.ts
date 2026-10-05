@@ -16,30 +16,35 @@ import type { User } from '@shared/api';
 
 let cachedToken: string | null = null;
 let cached: Promise<User> | null = null;
+const ME_CHANGED = 'kopdes:me-changed';
+
+export function refreshMeCache() {
+  cached = null;
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(ME_CHANGED));
+}
 
 export function useMe(): User | null {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-
-    if (cachedToken !== token || !cached) {
-      cachedToken = token;
-      // Gagal berarti cache dibuang: kalau tidak, satu kegagalan jaringan
-      // membuat nama tidak pernah muncul sampai halaman dimuat ulang.
-      cached = api.me().catch((e) => {
-        cached = null;
-        throw e;
-      });
-    }
-
     let alive = true;
-    void cached
-      .then((me) => alive && setUser(me))
-      .catch(() => undefined);
+    const load = () => {
+      const token = getToken();
+      if (!token) return;
+      if (cachedToken !== token || !cached) {
+        cachedToken = token;
+        cached = api.me().catch((e) => {
+          cached = null;
+          throw e;
+        });
+      }
+      void cached.then((me) => alive && setUser(me)).catch(() => undefined);
+    };
+    load();
+    window.addEventListener(ME_CHANGED, load);
     return () => {
       alive = false;
+      window.removeEventListener(ME_CHANGED, load);
     };
   }, []);
 

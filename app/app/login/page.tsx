@@ -38,7 +38,12 @@ function LoginForm() {
    */
   useEffect(() => {
     syncSessionCookie();
-    if (isSignedIn()) router.replace(next);
+    if (isSignedIn()) {
+      api.me()
+        .then((user) => router.replace(next !== '/' ? next : landingFor(user.role)))
+        // Token lokal yang sudah tidak sah tetap ditangani oleh form login.
+        .catch(() => undefined);
+    }
   }, [next, router]);
 
   async function submit(e: React.FormEvent) {
@@ -114,6 +119,10 @@ function landingFor(role: string): string {
     case 'ADMIN_KOPDES':
     case 'PEGAWAI_KOPDES':
       return '/pegawai';
+    case 'UMKM':
+      return '/umkm';
+    case 'COURIER':
+      return '/courier';
     default:
       return '/';
   }

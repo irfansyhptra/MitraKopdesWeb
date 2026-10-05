@@ -20,6 +20,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
+  avatarUrl?: string | null;
   role: Role;
 
   /// Kopdes penugasan staf. Null untuk pelanggan, mitra, kurir, super admin.
@@ -52,6 +53,7 @@ export const Permissions = {
   mitraRead: 'mitra:read',
   mitraVerify: 'mitra:verify',
   umkmProductTakedown: 'umkm:product:takedown',
+  umkmLocationUpdate: 'umkm:location:update',
   aiAssist: 'ai:assist',
   aiExecutive: 'ai:executive',
   kopdesPolicyManage: 'kopdes:policy:manage',
@@ -70,6 +72,15 @@ export interface AuthResult {
   accessToken: string;
   refreshToken: string;
   user: User;
+}
+
+export interface EmailVerificationChallenge {
+  verificationRequired: true;
+  email: string;
+  /** Detik sampai kode kedaluwarsa. */
+  expiresIn: number;
+  /** Detik sebelum tombol kirim ulang aktif. */
+  resendAfter: number;
 }
 
 export interface ProductImage {
@@ -138,7 +149,7 @@ export interface Cart {
   items: CartItem[];
 }
 
-export type PaymentMethod = 'QRIS' | 'COD';
+export type PaymentMethod = PaymentMethodCode | 'COD' | 'WALLET';
 
 export interface Order {
   id: string;
@@ -244,6 +255,7 @@ export type MitraCategory =
 
 export interface Mitra {
   id: string;
+  userId?: string;
   businessName: string;
   description?: string | null;
   address: string;
@@ -251,6 +263,9 @@ export interface Mitra {
   photoUrl?: string | null;
   category: MitraCategory;
   kopdesId?: string | null;
+  kopdes?: { id: string; name: string; village: string } | null;
+  latitude?: number | null;
+  longitude?: number | null;
   /** `null` berarti jam operasional belum diisi — bukan "tutup". */
   isOpen?: boolean | null;
   productCount?: number;
@@ -369,6 +384,8 @@ export interface MarketplaceFilter {
   discounted?: boolean;
   /** Satu koperasi saja: barangnya sendiri dan barang mitra di bawahnya. */
   kopdesId?: string;
+  /** Satu etalase UMKM saja; sama dengan filter Flutter StoreRef. */
+  umkmId?: string;
   /** Rating rata-rata minimum; 0 berarti tanpa batas bawah. */
   minRating?: number;
 
@@ -395,10 +412,25 @@ export interface Banner {
   imageUrl?: string | null;
 }
 
+/** Produk ringkas untuk seksi pilihan dan terlaris di beranda. */
+export interface DiscoveryProduct {
+  id: string;
+  name: string;
+  price: number | string;
+  stock: number;
+  imageUrl?: string | null;
+  sellerName: string;
+  /** Endpoint discovery memakai KOPERASI, berbeda dari katalog yang memakai KOPDES. */
+  source: 'KOPERASI' | 'UMKM';
+  soldCount?: number;
+  rank?: number;
+}
+
 export interface Category {
   id: string;
   name: string;
   group: 'FOOD' | 'RETAIL';
+  description?: string | null;
 }
 
 // ── Dashboard staf (GET /admin/dashboard/*) ──
@@ -475,7 +507,7 @@ export interface InventoryTransaction {
   user?: { id: string; name: string } | null;
 }
 
-// ── Pembayaran (Midtrans Core API) ──
+// ── Pembayaran (Midtrans Snap) ──
 
 /**
  * Metode yang benar-benar didukung backend dan aktif di akun merchant.
@@ -485,6 +517,7 @@ export interface InventoryTransaction {
  * ditekan lebih buruk daripada pilihan yang tidak ditawarkan.
  */
 export type PaymentMethodCode =
+  | 'MIDTRANS'
   | 'QRIS'
   | 'GOPAY'
   | 'SHOPEEPAY'
@@ -510,13 +543,7 @@ export interface PaymentAction {
   url: string;
 }
 
-/**
- * Bentuk yang sama untuk semua metode.
- *
- * Backend yang menormalkan respons Midtrans — QRIS lewat `actions`, VA bank
- * lewat `va_numbers`, Permata lewat field tersendiri, Mandiri lewat
- * `bill_key`. Layar hanya membaca field yang relevan bagi metodenya.
- */
+/** Sesi pembayaran Snap dan status yang sudah disahkan webhook. */
 export interface PaymentSnapshot {
   orderId: string;
   method: PaymentMethodCode | string;
@@ -537,6 +564,12 @@ export interface PaymentSnapshot {
   deeplinkUrl: string | null;
   actions: PaymentAction[];
   paidAt: string | null;
+  /** Token publik untuk membuka popup Snap. Server Key tidak pernah dikirim. */
+  snapToken: string | null;
+  snapRedirectUrl: string | null;
+  snapClientKey: string | null;
+  snapScriptUrl: string;
+  snapEnvironment: 'sandbox';
 }
 
 // ── Pengajuan koperasi & pemantauan (Super Admin) ──
@@ -645,6 +678,36 @@ export interface SuperAdminOverview {
   pendingMitra?: number;
 }
 
+export interface SuperAdminUser {
+  id: string;
+  email: string;
+  name: string;
+  phone?: string | null;
+  role: Role;
+  kopdesId?: string | null;
+  permissions?: string[];
+  createdAt: string;
+}
+
+export interface CreateSuperStaffInput {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+  role: 'ADMIN_KOPDES' | 'PEGAWAI_KOPDES';
+  kopdesId?: string;
+  permissions?: string[];
+}
+
+export interface UpdateSuperStaffInput {
+  name?: string;
+  phone?: string;
+  password?: string;
+  role?: 'ADMIN_KOPDES' | 'PEGAWAI_KOPDES';
+  kopdesId?: string;
+  permissions?: string[];
+}
+
 // ── Akun pegawai (GET/POST/PATCH/DELETE /admin/staff) ──
 
 export interface PermissionInfo {
@@ -731,6 +794,167 @@ export interface AdminDelivery {
       state: string;
     } | null;
   } | null;
+}
+
+export interface AdminMitra {
+  id: string;
+  businessName: string;
+  description?: string | null;
+  address: string;
+  phone?: string | null;
+  status: 'PENDING_VERIFICATION' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED' | string;
+  rejectionReason?: string | null;
+  verifiedAt?: string | null;
+  productCount: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  category?: string;
+  user?: { id: string; name: string; email: string; phone?: string | null };
+}
+
+export interface AdminUmkmProduct {
+  id: string;
+  name: string;
+  price: number | string;
+  stock: number;
+  isActive: boolean;
+  isApproved: boolean;
+  rejectionReason?: string | null;
+  umkm?: { id: string; businessName: string };
+  images?: ProductImage[];
+}
+
+// ── Portal penjual UMKM (GET/PUT /seller/*) ──
+
+export interface SellerStore {
+  id: string;
+  businessName: string;
+  description?: string | null;
+  address: string;
+  phone?: string | null;
+  photoUrl?: string | null;
+  bannerUrl?: string | null;
+  status: string;
+  verifiedAt?: string | null;
+}
+
+export interface SellerProduct extends Product {
+  categoryId: string;
+  isApproved: boolean;
+  rating: number;
+}
+
+export interface SellerActivity {
+  type: 'ORDER' | 'REVIEW' | 'STOCK_WARN' | string;
+  title: string;
+  description: string;
+  timestamp: string;
+}
+
+export interface SellerDashboard {
+  storeInfo: SellerStore;
+  stats: {
+    totalProducts: number;
+    totalOrders: number;
+    productsSold: number;
+    todayEarnings: number;
+    todayOrders: number;
+    monthlyEarnings: number;
+    monthlyOrders: number;
+    storeRating: number;
+    lowStockCount: number;
+    newOrdersCount: number;
+  };
+  lowStockProducts: SellerProduct[];
+  recentActivities: SellerActivity[];
+}
+
+export interface SellerProductPage {
+  products: SellerProduct[];
+  meta: PageMeta;
+  summary: { total?: number; safe: number; low: number; out: number };
+  lowStockThreshold: number;
+}
+
+export interface SellerProductInput {
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  categoryId: string;
+  isActive?: boolean;
+}
+
+export interface SellerOrder extends Order {
+  customerId: string;
+  customer: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string | null;
+  };
+  deliveryAddress: {
+    recipientName?: string;
+    phone?: string;
+    street: string;
+    city: string;
+    state: string;
+    postalCode?: string;
+  };
+  delivery?: {
+    id?: string;
+    courier?: { id: string; name: string; phone?: string | null } | null;
+  } | null;
+}
+
+// Respons `/courier/deliveries` memuat item pesanan dan lokasi terakhir.
+export interface CourierDelivery extends AdminDelivery {
+  order?: (NonNullable<AdminDelivery['order']> & {
+    totalAmount?: number | string;
+    paymentMethod?: string;
+    paymentStatus?: string;
+    items?: Array<{
+      id: string;
+      quantity: number;
+      product?: { name: string } | null;
+      umkmProduct?: { name: string } | null;
+    }>;
+  }) | null;
+  locations?: Array<{
+    latitude: number;
+    longitude: number;
+    recordedAt: string;
+  }>;
+}
+
+export type ChatChannel = 'MARKETPLACE' | 'DELIVERY' | 'GENERAL';
+
+export interface ChatConversation {
+  id: string;
+  lastMessageAt: string;
+  otherUser: { id: string; name: string; role: Role; email?: string };
+  lastMessage?: { id: string; content: string; createdAt: string } | null;
+  unreadCount: number;
+  channel: ChatChannel;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  readAt?: string | null;
+  sender?: { id: string; name: string; role: Role; email?: string };
+}
+
+export interface ContentPage {
+  slug: string;
+  title: string;
+  subtitle?: string | null;
+  sections: unknown;
+  footnote?: string | null;
+  updatedAt: string;
 }
 
 // ── Ulasan (GET/POST /reviews) ──

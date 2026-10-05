@@ -23,10 +23,11 @@ const PROTECTED = [
   '/tracking',
   '/pegawai',
   '/super-admin',
+  '/admin',
+  '/umkm',
+  '/courier',
+  '/chat',
 ];
-
-/** Rute yang tidak masuk akal bagi yang sudah masuk. */
-const GUEST_ONLY = ['/login', '/register'];
 
 const SESSION_COOKIE = 'kopdes_session';
 
@@ -34,22 +35,15 @@ export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const signedIn = request.cookies.get(SESSION_COOKIE)?.value === '1';
 
-  if (!signedIn && PROTECTED.some((p) => pathname.startsWith(p))) {
+  if (
+    !signedIn &&
+    PROTECTED.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     // Tujuan semula dibawa serta supaya setelah masuk pengguna kembali ke
     // tempat yang ia tuju, bukan ke beranda.
     url.search = `?next=${encodeURIComponent(pathname + search)}`;
-    return NextResponse.redirect(url);
-  }
-
-  if (signedIn && GUEST_ONLY.some((p) => pathname.startsWith(p))) {
-    const url = request.nextUrl.clone();
-    // `next` dihormati: pengguna bisa sampai di /login lewat tautan lama
-    // padahal sesinya masih hidup.
-    const next = request.nextUrl.searchParams.get('next');
-    url.pathname = next?.startsWith('/') ? next.split('?')[0] : '/';
-    url.search = '';
     return NextResponse.redirect(url);
   }
 

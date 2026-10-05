@@ -20,23 +20,17 @@
   background: var(--surface-soft);
 }
 
+/*
+ * Bilah atas tidak punya permukaan sendiri: yang mengambang adalah tiga
+ * kelompok kaca di dalamnya, dan di antara kelompok itu isi halaman terlihat
+ * langsung. `pointer-events` dimatikan di bilahnya supaya ruang kosong itu
+ * tidak menelan klik ke isi yang bergulir di bawahnya.
+ */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 20;
-  /* Kaca dipakai di lapisan yang mengambang di atas isi — bilah atas dan
-     bilah bawah — bukan di tiap kartu: blur per kartu memaksa save-layer
-     setiap frame gulir, dan itu terasa sebelum terlihat. */
-  background: var(--glass-strong);
-  backdrop-filter: var(--glass-filter-strong);
-  -webkit-backdrop-filter: var(--glass-filter-strong);
-  border-bottom: 1px solid var(--hairline-soft);
-}
-
-@supports not (backdrop-filter: blur(1px)) {
-  .topbar {
-    background: rgba(255, 255, 255, 0.96);
-  }
+  pointer-events: none;
 }
 
 .topbar__inner {
@@ -45,72 +39,198 @@
   padding: var(--sp-md) var(--page-padding);
   display: flex;
   align-items: center;
-  gap: var(--sp-base);
+  /* Ketiga kelompok rapat di kanan; merek, bila digambar, yang mendorongnya. */
+  justify-content: flex-end;
+  gap: var(--sp-sm);
 }
 
-.brand {
-  display: inline-flex;
-  align-items: baseline;
-  /* 28px teks + 8px atas-bawah = target sentuh 44px tanpa merusak baseline. */
-  padding: 8px 0;
+.topbar__inner > * {
+  pointer-events: auto;
+}
+
+/*
+ * Merek adalah kelompok pertama selama kapsul menu belum digambar, jadi ia
+ * memakai kaca yang sama: tanpa permukaan, isi yang bergulir lewat di
+ * belakangnya menembus tulisannya. Begitu kapsul menu muncul pada 720px,
+ * merek pindah ke sana — dan pada 1024px ke sidebar — supaya bilah atas
+ * tetap berisi tiga kelompok, tidak empat.
+ *
+ * `.topbar .brand`, bukan `.brand`: elemennya juga memakai kelas `.navgroup`,
+ * dan dengan bobot yang sama aturan yang ditulis belakangan yang menang —
+ * itu sempat membuat kapsulnya memakai padding 4px milik `.navgroup`,
+ * sehingga tulisannya nyaris menempel ke tepi pil.
+ */
+.topbar .brand {
+  margin-right: auto;
+  /* 4px padding + 40px isi + 1px tepi: setinggi kedua kelompok di sebelahnya. */
+  min-height: 50px;
+  padding: 4px var(--sp-base);
   gap: 1px;
   font-size: 19px;
   font-weight: 800;
-  color: var(--primary);
   letter-spacing: -0.01em;
+  color: var(--primary);
 }
 
 .brand span {
   color: var(--ink);
 }
 
-.topnav {
-  display: none;
-  gap: var(--sp-xs);
-  margin-left: auto;
-  align-items: center;
+@media (min-width: 720px) {
+  .topbar .brand {
+    display: none;
+  }
 }
 
-/* Navigasi atas baru muncul saat memang ada ruangnya; di bawah itu navigasi
-   pindah ke bilah bawah, sama seperti di ponsel. */
+/*
+ * Tiga kelompok kaca.
+ *
+ * Kaca dipakai di lapisan yang mengambang di atas isi — kelompok ini dan
+ * bilah bawah — bukan di tiap kartu: blur per kartu memaksa save-layer
+ * setiap frame gulir, dan itu terasa sebelum terlihat.
+ */
+.navgroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(17px) saturate(140%);
+  border: 1px solid var(--glass-border-soft);
+  box-shadow: var(--sh-subtle);
+}
+
+/* Tanpa blur, kaca tinggal putih pudar dan teks di belakangnya menembus. */
+@supports not (backdrop-filter: blur(1px)) {
+  .navgroup {
+    background: rgba(255, 255, 255, 0.94);
+  }
+}
+
+/* Keranjang berdiri sendiri: satu tombol tidak perlu bentuk kapsul. */
+.navgroup--square {
+  border-radius: var(--r-md);
+}
+
+/* Menu utama mengikuti aturan lama bilah bawah: baru muncul saat memang ada
+   ruangnya, dan di bawah itu navigasi pindah ke bilah bawah. */
+.navgroup--menu {
+  display: none;
+}
+
 @media (min-width: 720px) {
-  .topnav {
+  .navgroup--menu {
     display: flex;
   }
 }
 
-.topnav a {
-  padding: var(--sp-sm) var(--sp-md);
-  border-radius: var(--r-sm);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--body);
-  min-height: 44px;
+/*
+ * Hanya tautan di kapsul menu. Sebelumnya aturan ini berlaku untuk setiap
+ * `a` di dalam kelompok mana pun, dan `.navgroup a` menang atas
+ * `.kc-btn--primary` maupun avatar akun — tombol "Masuk" dan avatar
+ * jadi bertulisan abu-abu gelap di atas merah.
+ */
+.navgroup--menu a {
+  min-height: 40px;
+  padding: 0 var(--sp-md);
+  border-radius: var(--r-pill);
   display: inline-flex;
   align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--body);
+  transition:
+    background var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out);
 }
 
-.topnav a:hover {
-  background: var(--surface-soft);
+.navgroup--menu a:hover {
+  background: rgba(0, 0, 0, 0.03);
   color: var(--ink);
 }
 
-.topnav a[aria-current='page'] {
+/* Satu-satunya isian berwarna di seluruh bilah atas. */
+.navgroup--menu a[aria-current='page'] {
+  background: var(--primary-soft);
   color: var(--primary-text);
-  background: var(--primary-tint);
+  font-weight: 600;
 }
 
-.topbar__actions {
+/* Tombol ikon ikut tinggi kelompoknya, bukan 44px penuh: 4px padding + 40px
+   + tepi = 50px, setinggi kapsul menu di sebelahnya. Pemusatannya datang dari
+   `place-items` milik `.icon-btn` sendiri. */
+.navgroup .icon-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+.navgroup--square .icon-btn {
+  border-radius: var(--r-sm);
+}
+
+.navgroup .kc-btn {
+  min-height: 40px;
+}
+
+/*
+ * Notifikasi dan akun berdiri sendiri-sendiri di semua lebar: dua kapsul,
+ * bukan satu yang memuat keduanya. Wadah ini bukan `.navgroup` — ia hanya
+ * mengatur jarak, dan kacanya menempel di tiap tombol.
+ */
+.topbar__account {
   display: flex;
   align-items: center;
   gap: var(--sp-sm);
-  margin-left: auto;
 }
 
-@media (min-width: 720px) {
-  .topbar__actions {
-    margin-left: 0;
+/* Hanya tombol ikon yang butuh kaca. Tombol "Masuk" dan avatar sudah punya
+   permukaannya sendiri — melapisinya dengan kaca justru menghapus warnanya. */
+.topbar__account > .icon-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(17px) saturate(140%);
+  border: 1px solid var(--glass-border-soft);
+  box-shadow: var(--sh-subtle);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .topbar__account > .icon-btn {
+    background: rgba(255, 255, 255, 0.94);
   }
+}
+
+/* Avatar akun memakai foto tersimpan; inisial menjadi fallback. */
+.topbar__avatar {
+  width: 50px;
+  height: 50px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: var(--r-pill);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 15px;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.topbar__avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.topbar__account > .kc-btn {
+  min-height: 50px;
+}
+
+/* 320px masih dipakai perangkat lama dan audit aksesibilitas. Pada lebar
+   ini empat kelompok tidak muat; notifikasi belum punya endpoint sendiri,
+   sehingga ia yang dilepas lebih dulu dan merek tetap terbaca penuh. */
+@media (max-width: 359px) {
+  .topbar__account > .icon-btn { display: none; }
 }
 
 .icon-btn {
@@ -154,20 +274,13 @@
 }
 
 /*
- * Komposisi desktop: sidebar kaca mengambang di kiri, isi bergeser
- * sejauh lebarnya. Padding dipasang pada `.shell` supaya bilah atas dan isi
- * bergeser bersama-sama — dua pergeseran terpisah selalu berakhir beda satu
- * piksel. Merek dan navigasi atas disembunyikan karena keduanya sudah ada di
- * sidebar; yang tersisa di bilah atas hanya keranjang dan akun.
+ * Komposisi desktop: sidebar menempel di tepi kiri dan isi bergeser sejauh
+ * lebarnya. Padding dipasang pada `.shell` supaya bilah atas dan isi bergeser
+ * bersama-sama — dua pergeseran terpisah selalu berakhir beda satu piksel.
  */
 @media (min-width: 1024px) {
   .shell {
-    padding-left: calc(var(--sidebar-w) + var(--sidebar-inset) * 2);
-  }
-
-  .topbar .brand,
-  .topbar .topnav {
-    display: none;
+    padding-left: var(--sidebar-w);
   }
 
   .topbar__inner {
@@ -201,7 +314,6 @@
   border-radius: var(--r-2xl);
   background: var(--glass-strong);
   backdrop-filter: var(--glass-filter-strong);
-  -webkit-backdrop-filter: var(--glass-filter-strong);
   border: 1px solid var(--glass-border);
   box-shadow: var(--sh-floating);
   overflow: hidden;
@@ -436,6 +548,33 @@
   cursor: pointer;
 }
 
+/* ── Halaman Pesanan ──────────────────────────────────────────────────
+   Irama satu kolom: kepala halaman, tab, strip aman, lalu seksi bernama.
+   Jaraknya satu nilai di wadahnya, bukan margin yang ditempel per elemen. */
+
+.orders-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-lg);
+}
+
+/* Jaraknya sudah datang dari `gap`; margin bawaannya akan menggandakannya. */
+.orders-page .page-head {
+  margin-bottom: 0;
+}
+
+/* Seksi tidak dibungkus permukaan putih — judulnya dan ruang kosong yang
+   memisahkannya, sama seperti seksi di beranda. */
+.orders-section {
+  min-width: 0;
+}
+
+.ordercard-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+}
+
 /* ── Kartu pesanan (padanan OrderStatusCard) ── */
 
 .ordercard {
@@ -443,6 +582,10 @@
   flex-direction: column;
   gap: var(--sp-sm);
   padding: var(--sp-base);
+  background: var(--canvas);
+  border: 1px solid var(--hairline-soft);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-soft);
 }
 
 .ordercard__head {
@@ -550,8 +693,89 @@
 
 /* Slot aksi autentikasi sebelum keadaan sesi diketahui.
    Lebar tetap supaya bilah atas tidak bergeser saat tombolnya muncul. */
+/* Selebar tombol "Masuk", setinggi avatar: apa pun yang akhirnya digambar,
+   kapsulnya tidak berubah ukuran saat sesi diketahui. */
 .authslot {
   display: inline-block;
   width: 84px;
-  height: 36px;
+  height: 50px;
 }
+
+/* Pemilih media profil: kontrol native tetap dapat difokuskan, sedangkan
+   permukaan memberi pratinjau langsung sebelum unggahan dimulai. */
+.media-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-base);
+  min-width: 0;
+}
+
+.media-picker__preview {
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--primary);
+  background: var(--primary-tint);
+  border: 1px solid var(--hairline);
+}
+
+.media-picker--avatar .media-picker__preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+}
+
+.media-picker--banner {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.media-picker--banner .media-picker__preview {
+  width: min(100%, 520px);
+  aspect-ratio: 16 / 6;
+  border-radius: var(--r-card);
+}
+
+.media-picker__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-picker__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+}
+
+.media-picker__copy strong { font-size: 14px; }
+.media-picker__copy span { color: var(--muted); font-size: 12px; }
+.media-picker__copy input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.media-picker__button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 3px;
+  padding: 0 var(--sp-base);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-button);
+  background: var(--canvas);
+  color: var(--primary-active);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.media-picker__copy:has(input:focus-visible) .media-picker__button {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.media-picker__error { color: var(--error-text) !important; }

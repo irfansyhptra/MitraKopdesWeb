@@ -1,7 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Badge, Chip, ListGroup, Message, Skeleton } from '@shared/design/ui';
+import {
+  Badge,
+  Chip,
+  Message,
+  SectionHeader,
+  Skeleton,
+} from '@shared/design/ui';
 import { Package } from '@shared/design/icons';
 import {
   formatDate,
@@ -65,33 +71,43 @@ export function OrderListTab({
   onLoadMore: () => void;
   onRetry: () => void;
 }) {
+  const title = finished ? 'Riwayat Pesanan' : 'Sedang Diproses';
+
   if (loading) {
     return (
-      <div className="stack-md">
-        {[0, 1].map((i) => (
-          <div className="kc-card kc-card--pad stack-sm" key={i}>
-            <Skeleton height={14} width="40%" />
-            <Skeleton height={44} width="55%" />
-            <Skeleton height={14} width="30%" />
-          </div>
-        ))}
-      </div>
+      <section className="orders-section">
+        <SectionHeader title={title} />
+        <div className="ordercard-list">
+          {[0, 1].map((i) => (
+            <div className="ordercard stack-sm" key={i}>
+              <Skeleton height={14} width="40%" />
+              <Skeleton height={44} width="55%" />
+              <Skeleton height={14} width="30%" />
+            </div>
+          ))}
+        </div>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <Message
-        title="Pesanan belum berhasil dimuat"
-        body={error}
-        actionLabel="Coba Lagi"
-        onAction={onRetry}
-      />
+      <section className="orders-section">
+        <SectionHeader title={title} />
+        <Message
+          title="Pesanan belum berhasil dimuat"
+          body={error}
+          actionLabel="Coba Lagi"
+          onAction={onRetry}
+        />
+      </section>
     );
   }
 
   return (
-    <div className="stack-md">
+    <section className="orders-section">
+      <SectionHeader title={title} />
+
       {finished && filter && onFilter && (
         <div className="filterbar__row" aria-label="Filter riwayat">
           {DONE_FILTERS.map((option) => (
@@ -115,11 +131,14 @@ export function OrderListTab({
           }
         />
       ) : (
-        <ListGroup>
+        /* Satu kartu per pesanan, dipisahkan ruang kosong — bukan satu blok
+           putih panjang dengan garis pemisah. Tiap pesanan berdiri sendiri,
+           dan tumpukan kartu itulah bahasa yang dipakai di seluruh situs. */
+        <div className="ordercard-list">
           {orders.map((order) => (
             <OrderCard key={order.id} order={order} finished={finished} />
           ))}
-        </ListGroup>
+        </div>
       )}
 
       {/* Riwayat berhalaman: tombol, bukan gulir otomatis. Tab ini dibuka
@@ -137,7 +156,7 @@ export function OrderListTab({
           </button>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

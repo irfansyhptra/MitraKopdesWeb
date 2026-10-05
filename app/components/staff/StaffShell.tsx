@@ -9,6 +9,8 @@ import {
   CircleSlash,
   Clock,
   LayoutDashboard,
+  LayoutGrid,
+  MapPin,
   Package2,
   ReceiptText,
   ShieldCheck,
@@ -38,6 +40,12 @@ const NAV: {
   { href: '/pegawai/pesanan', label: 'Pesanan', icon: ReceiptText },
   { href: '/pegawai/stok', label: 'Stok', icon: Package2 },
   {
+    href: '/pegawai/kategori',
+    label: 'Kategori',
+    icon: LayoutGrid,
+    permission: Permissions.categoryManage,
+  },
+  {
     href: '/pegawai/anggota',
     label: 'Anggota',
     icon: UsersRound,
@@ -48,6 +56,24 @@ const NAV: {
     label: 'Akun',
     icon: ShieldCheck,
     permission: Permissions.staffManage,
+  },
+  {
+    href: '/pegawai/mitra',
+    label: 'Mitra UMKM',
+    icon: Store,
+    permission: Permissions.mitraRead,
+  },
+  {
+    href: '/pegawai/moderasi',
+    label: 'Moderasi',
+    icon: ShieldCheck,
+    permission: Permissions.umkmProductTakedown,
+  },
+  {
+    href: '/pegawai/lokasi-mitra',
+    label: 'Lokasi Mitra',
+    icon: MapPin,
+    permission: Permissions.umkmLocationUpdate,
   },
   { href: '/pegawai/profil', label: 'Profil', icon: UserIcon },
 ];
@@ -109,7 +135,7 @@ export function StaffShell({ children }: { children: ReactNode }) {
               className="staff-header__avatar"
               aria-label={`Profil ${user?.name ?? 'pegawai'}`}
             >
-              {initial}
+              {user?.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initial}
             </Link>
           </div>
 

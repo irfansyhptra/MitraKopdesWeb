@@ -3,7 +3,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createApiClient } from '@shared/api';
 import { Countdown, CopyRow, STATUS_VIEW } from '@/components/payment/PaymentBits';
-import { PAYMENT_METHODS, methodInfo } from '@/components/payment/methods';
 import { isFinalStatus } from '@/components/payment/usePaymentStatus';
 import type { PaymentView } from '@shared/api';
 
@@ -33,16 +32,16 @@ describe('klien API pembayaran', () => {
   const client = () => createApiClient({ baseUrl: 'https://contoh.test/api/v1' });
   const OK = { success: true, data: { orderId: 'o1', status: 'PENDING' } };
 
-  it('hanya mengirim id pesanan dan metode — tidak ada nominal', async () => {
+  it('hanya mengirim id pesanan — metode dipilih di Snap', async () => {
     const fetchMock = withFetch(OK);
-    await client().createPayment('order-1', 'QRIS');
+    await client().createPayment('order-1');
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('https://contoh.test/api/v1/payments/create');
     const sent = JSON.parse(init.body);
     // Nominal yang dikirim klien adalah nominal yang bisa diubah siapa pun
     // lewat DevTools; backend menghitungnya ulang dari database.
-    expect(sent).toEqual({ orderId: 'order-1', paymentMethod: 'QRIS' });
+    expect(sent).toEqual({ orderId: 'order-1' });
     for (const forbidden of ['amount', 'grossAmount', 'total', 'discount']) {
       expect(sent).not.toHaveProperty(forbidden);
     }
@@ -60,28 +59,6 @@ describe('klien API pembayaran', () => {
     const fetchMock = withFetch(OK);
     await client().getPayment('a/b?c');
     expect(String(fetchMock.mock.calls[0][0])).toContain('a%2Fb%3Fc');
-  });
-});
-
-describe('katalog metode', () => {
-  it('tidak menawarkan kartu kredit', () => {
-    // Input kartu langsung menuntut kepatuhan PCI DSS tersendiri.
-    expect(PAYMENT_METHODS.some((m) => /kartu|card/i.test(m.name))).toBe(false);
-  });
-
-  it('tiap metode punya halaman instruksinya', () => {
-    for (const m of PAYMENT_METHODS) {
-      expect(['qris', 'va', 'ewallet', 'bill']).toContain(m.instruction);
-    }
-  });
-
-  it('kode metode tidak ada yang kembar', () => {
-    const codes = PAYMENT_METHODS.map((m) => m.code);
-    expect(new Set(codes).size).toBe(codes.length);
-  });
-
-  it('metode tak dikenal dijawab undefined, bukan melempar', () => {
-    expect(methodInfo('KARTU_KREDIT')).toBeUndefined();
   });
 });
 

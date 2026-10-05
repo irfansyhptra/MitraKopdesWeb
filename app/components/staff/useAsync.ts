@@ -45,5 +45,7 @@ export function useAsync<T>(
   const [nonce, setNonce] = useState(0);
   useEffect(() => load(), [load, nonce]);
 
-  return { data, loading, error, reload: () => setNonce((n) => n + 1) };
+  const reload = useCallback(() => setNonce((n) => n + 1), []);
+
+  return { data, loading, error, reload };
 }

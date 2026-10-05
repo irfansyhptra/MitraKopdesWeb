@@ -86,6 +86,42 @@ describe('aiChat', () => {
   });
 });
 
+describe('verifikasi email pelanggan', () => {
+  it('pendaftaran mengembalikan challenge tanpa membuat sesi di klien', async () => {
+    const fetchMock = withFetch(201, {
+      success: true,
+      data: { verificationRequired: true, email: 'warga@desa.id', expiresIn: 600, resendAfter: 60 },
+    });
+    const result = await client().register({
+      email: 'warga@desa.id', password: 'rahasia', name: 'Warga',
+    });
+    expect(result.verificationRequired).toBe(true);
+    expect(fetchMock.mock.calls[0][0]).toBe('https://contoh.test/api/v1/auth/register');
+  });
+
+  it('verifikasi OTP memakai endpoint dan payload yang tepat', async () => {
+    const fetchMock = withFetch(200, {
+      success: true,
+      data: { accessToken: 'a', refreshToken: 'r', user: { id: 'u1', role: 'CUSTOMER' } },
+    });
+    await client().verifyCustomerEmail('warga@desa.id', '123456');
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://contoh.test/api/v1/auth/verify-email');
+    expect(JSON.parse(init.body)).toEqual({ email: 'warga@desa.id', code: '123456' });
+  });
+
+  it('kirim ulang menggunakan endpoint terpisah', async () => {
+    const fetchMock = withFetch(200, {
+      success: true,
+      data: { verificationRequired: true, email: 'warga@desa.id', expiresIn: 600, resendAfter: 60 },
+    });
+    await client().resendCustomerEmailOtp('warga@desa.id');
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'https://contoh.test/api/v1/auth/resend-verification',
+    );
+  });
+});
+
 describe('penyimpanan barang', () => {
   const product = {
     name: 'Beras', description: 'Beras 5 kg', categoryId: 'beras', price: 70000,
@@ -224,5 +260,131 @@ describe('envelope kosong', () => {
   it('jawaban tanpa envelope tetap diteruskan apa adanya', async () => {
     withFetch(200, { id: 'p1', name: 'Beras' });
     await expect(client().getProduct('p1')).resolves.toMatchObject({ id: 'p1' });
+  });
+});
+
+describe('paritas endpoint portal UMKM', () => {
+  it('mengirim foto akun serta media toko sebagai multipart', async () => {
+    const fetchMock = withFetch(200, { success: true, data: { id: 'u1' } });
+    const avatar = new File(['avatar'], 'avatar.jpg', { type: 'image/jpeg' });
+    const banner = new File(['banner'], 'banner.webp', { type: 'image/webp' });
+
+    await client().updateAvatar(avatar);
+    await client().updateSellerMedia({ banner });
+
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'https://contoh.test/api/v1/auth/profile/avatar',
+    );
+    expect(fetchMock.mock.calls[0][1].method).toBe('PUT');
+    expect(fetchMock.mock.calls[0][1].body).toBeInstanceOf(FormData);
+    expect((fetchMock.mock.calls[0][1].body as FormData).get('avatar')).toBe(
+      avatar,
+    );
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      'https://contoh.test/api/v1/seller/profile/media',
+    );
+    expect((fetchMock.mock.calls[1][1].body as FormData).get('banner')).toBe(
+      banner,
+    );
+  });
+
+  it('membaca produk, ringkasan stok, dan meta dari /seller/products', async () => {
+    const fetchMock = withFetch(200, {
+      success: true,
+      data: {
+        products: [{ id: 'u1', name: 'Kopi', stock: 2 }],
+        meta: { total: 21, page: 2, limit: 20, totalPages: 2 },
+        summary: { safe: 17, low: 3, out: 1 },
+        lowStockThreshold: 5,
+      },
+    });
+    const page = await client().getSellerProducts({
+      search: 'kopi',
+      stockStatus: 'low',
+      page: 2,
+    });
+    expect(page.products[0].id).toBe('u1');
+    expect(page.summary.low).toBe(3);
+    expect(page.meta.total).toBe(21);
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      '/seller/products?page=2&limit=20&search=kopi&stockStatus=low',
+    );
+  });
+
+  it('penyesuaian stok memakai ledger seller yang sama dengan Flutter', async () => {
+    const fetchMock = withFetch(200, {
+      success: true,
+      data: { currentStock: 7 },
+    });
+    await client().adjustSellerStock('u1', -2, 'Barang rusak');
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://contoh.test/api/v1/seller/inventory/adjust');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({
+      umkmProductId: 'u1',
+      type: 'OUT',
+      quantity: 2,
+      reason: 'Barang rusak',
+    });
+  });
+
+  it('status pesanan penjual memakai PUT /seller/orders/:id/status', async () => {
+    const fetchMock = withFetch(200, { success: true, data: { id: 'o1' } });
+    await client().updateSellerOrderStatus('o1', 'PROCESSING');
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://contoh.test/api/v1/seller/orders/o1/status');
+    expect(init.method).toBe('PUT');
+    expect(JSON.parse(init.body)).toEqual({ status: 'PROCESSING' });
+  });
+});
+
+describe('paritas endpoint kurir', () => {
+  it('mengambil penugasan dan menandai barang sudah diantar', async () => {
+    const fetchMock = withFetch(200, { success: true, data: [] });
+    await client().getCourierDeliveries();
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'https://contoh.test/api/v1/courier/deliveries',
+    );
+
+    await client().markCourierDelivered('d1');
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      'https://contoh.test/api/v1/courier/deliveries/d1/mark-delivered',
+    );
+    expect(fetchMock.mock.calls[1][1].method).toBe('PATCH');
+  });
+});
+
+describe('paritas etalase dan pengurus', () => {
+  it('etalase satu mitra mengirim umkmId ke endpoint marketplace', async () => {
+    const fetchMock = withFetch(200, { success: true, data: { products: [], total: 0 } });
+    await client().getMarketplaceProducts({ sellerType: 'UMKM', umkmId: 'u-1' });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      '/marketplace/products?page=1&limit=20&sellerType=UMKM&sort=newest&umkmId=u-1',
+    );
+  });
+
+  it('akun dan direktori Super Admin memakai endpoint aplikasi', async () => {
+    const fetchMock = withFetch(200, { success: true, data: [] });
+    await client().getSuperAdminAccounts();
+    await client().getSuperAdminUsers({ role: 'UMKM', search: 'kopi' });
+    expect(fetchMock.mock.calls[0][0]).toBe('https://contoh.test/api/v1/super-admin/accounts');
+    expect(fetchMock.mock.calls[1][0]).toBe('https://contoh.test/api/v1/super-admin/users?role=UMKM&search=kopi');
+  });
+
+  it('koordinat mitra disimpan melalui endpoint Admin Kopdes', async () => {
+    const fetchMock = withFetch(200, { success: true, data: { id: 'u-1' } });
+    await client().updateAdminMitraLocation('u-1', -5.55, 95.32, 'KULINER');
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://contoh.test/api/v1/admin/umkm/u-1/location');
+    expect(init.method).toBe('PATCH');
+    expect(JSON.parse(init.body)).toEqual({ latitude: -5.55, longitude: 95.32, category: 'KULINER' });
+  });
+
+  it('chat toko membuat percakapan di channel marketplace', async () => {
+    const fetchMock = withFetch(200, { success: true, data: { id: 'c-1' } });
+    await client().startConversation('seller-1', 'MARKETPLACE');
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://contoh.test/api/v1/chat/conversations');
+    expect(JSON.parse(init.body)).toEqual({ recipientId: 'seller-1', channel: 'MARKETPLACE' });
   });
 });
